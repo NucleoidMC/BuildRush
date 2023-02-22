@@ -1,0 +1,23 @@
+{
+  "type": "build_rush:normal",
+  "name": {
+    "translate": "map.build_rush.test"
+  },
+  "icon": "minecraft:quartz_bricks",
+  "players": {
+    "min": 1,
+    "threshold": 8,
+    "max": 12
+  },
+  "map": {
+    "template": "build_rush:test",
+    "platform": "build_rush:platform/test",
+    "plot_ground": "build_rush:plot_ground/test",
+    "center_plot_offset": [1, 1, 1],
+    "platform_plot_offset": [3, 1, 3],
+    "platform_spacing": 10
+  },
+  "structures": [
+    "build_rush:tree"
+  ]
+}
