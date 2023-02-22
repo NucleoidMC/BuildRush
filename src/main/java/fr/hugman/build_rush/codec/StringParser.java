@@ -1,4 +1,4 @@
-package com.napero.build_rush.codec;
+package fr.hugman.build_rush.codec;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;

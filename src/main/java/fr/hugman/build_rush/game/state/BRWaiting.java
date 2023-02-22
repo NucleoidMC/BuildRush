@@ -1,7 +1,7 @@
-package com.napero.build_rush.game.state;
+package fr.hugman.build_rush.game.state;
 
-import com.napero.build_rush.BRConfig;
-import com.napero.build_rush.BuildRush;
+import fr.hugman.build_rush.BRConfig;
+import fr.hugman.build_rush.BuildRush;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.structure.StructureTemplateManager;

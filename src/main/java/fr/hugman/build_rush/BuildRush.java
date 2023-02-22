@@ -1,6 +1,6 @@
-package com.napero.build_rush;
+package fr.hugman.build_rush;
 
-import com.napero.build_rush.game.state.BRWaiting;
+import fr.hugman.build_rush.game.state.BRWaiting;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;

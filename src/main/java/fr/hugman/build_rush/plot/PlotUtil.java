@@ -1,4 +1,4 @@
-package com.napero.build_rush.plot;
+package fr.hugman.build_rush.plot;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemStack;

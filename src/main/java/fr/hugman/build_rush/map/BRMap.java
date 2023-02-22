@@ -1,8 +1,8 @@
-package com.napero.build_rush.map;
+package fr.hugman.build_rush.map;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.napero.build_rush.codec.BRCodecs;
+import fr.hugman.build_rush.codec.BRCodecs;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.dynamic.Codecs;
 import net.minecraft.util.math.BlockPos;

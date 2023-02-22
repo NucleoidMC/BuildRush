@@ -1,8 +1,8 @@
-package com.napero.build_rush;
+package fr.hugman.build_rush;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.napero.build_rush.map.BRMap;
+import fr.hugman.build_rush.map.BRMap;
 import net.minecraft.util.Identifier;
 import xyz.nucleoid.plasmid.game.common.config.PlayerConfig;
 

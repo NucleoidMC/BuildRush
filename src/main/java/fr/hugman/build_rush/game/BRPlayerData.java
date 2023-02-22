@@ -1,4 +1,4 @@
-package com.napero.build_rush.game;
+package fr.hugman.build_rush.game;
 
 import xyz.nucleoid.map_templates.BlockBounds;
 

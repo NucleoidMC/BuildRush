@@ -1,4 +1,4 @@
-package com.napero.build_rush.codec;
+package fr.hugman.build_rush.codec;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;

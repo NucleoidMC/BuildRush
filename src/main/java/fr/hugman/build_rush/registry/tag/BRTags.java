@@ -1,6 +1,6 @@
-package com.napero.build_rush.registry.tag;
+package fr.hugman.build_rush.registry.tag;
 
-import com.napero.build_rush.BuildRush;
+import fr.hugman.build_rush.BuildRush;
 import net.minecraft.block.Block;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.tag.TagKey;

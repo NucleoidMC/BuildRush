@@ -1,8 +1,8 @@
-package com.napero.build_rush.game.state;
+package fr.hugman.build_rush.game.state;
 
-import com.napero.build_rush.BRConfig;
-import com.napero.build_rush.game.BRPlayerData;
-import com.napero.build_rush.plot.PlotUtil;
+import fr.hugman.build_rush.BRConfig;
+import fr.hugman.build_rush.game.BRPlayerData;
+import fr.hugman.build_rush.plot.PlotUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.item.ItemUsageContext;
@@ -12,7 +12,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
-import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -120,10 +119,6 @@ public class BRActive {
 		this.pickPlotStructure();
 		for(var player : this.space.getPlayers()) {
 			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
-		}
-		//TODO: remove this
-		for(int i = 0; i < 11; i++) {
-			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
 		}
 		this.calcPlatformsAndPlots();
 		this.placePlatforms(true);
