@@ -39,7 +39,7 @@ public class BRWaiting {
 
 			var centerRegion = template.getMetadata().getFirstRegion("center");
 			if(centerRegion == null) {
-				throw new IllegalStateException("Map does not have a center region");
+				throw new GameOpenException(Text.literal("Map does not have a center region"));
 			}
 
 			return context.openWithWorld(worldConfig, (activity, world) -> {
@@ -48,8 +48,8 @@ public class BRWaiting {
 				StructureTemplateManager templateManager = world.getStructureTemplateManager();
 
 				var centerBounds = centerRegion.getBounds();
-				var platform = templateManager.getTemplate(config.map().platform()).orElseThrow(() -> new IllegalStateException("Platform structure not found"));
-				var plotGround = templateManager.getTemplate(config.map().plotGround()).orElseThrow(() -> new IllegalStateException("Plot ground structure not found"));
+				var platform = templateManager.getTemplate(config.map().platform()).orElseThrow(() -> new GameOpenException(Text.literal("Platform structure not found")));
+				var plotGround = templateManager.getTemplate(config.map().plotGround()).orElseThrow(() -> new GameOpenException(Text.literal("Plot ground structure not found")));
 				if(plotGround.getSize().getX() != plotGround.getSize().getZ()) {
 					throw new GameOpenException(Text.literal("Plot ground structure must be square"));
 				}
@@ -110,15 +110,15 @@ public class BRWaiting {
 			if(structure.getSize().getX() != plotSize ||
 					structure.getSize().getZ() != plotSize ||
 					structure.getSize().getY() < plotSize || structure.getSize().getY() > plotSize + 1) {
-				throw new IllegalStateException("Structure: " + plot.toString() + " is not the correct size! (Expected " +
+				throw new GameOpenException(Text.literal("Structure: " + plot.toString() + " is not the correct size! (Expected " +
 						plotSize + "," + plotSize + "," + plotSize + ", or " +
 						plotSize + "," + (plotSize + 1) + "," + plotSize + " got " +
-						structure.getSize().getX() + "," + structure.getSize().getY() + "," + structure.getSize().getZ() + ")");
+						structure.getSize().getX() + "," + structure.getSize().getY() + "," + structure.getSize().getZ() + ")"));
 			}
 			plotStructures.add(structure);
 		}
 		if(plotStructures.size() == 0) {
-			throw new IllegalStateException("No structures were found!");
+			throw new GameOpenException(Text.literal("No structures were found!"));
 		}
 		return plotStructures;
 	}
