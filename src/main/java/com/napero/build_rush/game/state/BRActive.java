@@ -1,14 +1,20 @@
 package com.napero.build_rush.game.state;
 
 import com.napero.build_rush.BRConfig;
-import com.napero.build_rush.game.PlayerData;
+import com.napero.build_rush.game.BRPlayerData;
+import com.napero.build_rush.plot.PlotUtil;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.item.ItemUsageContext;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
+import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
@@ -17,6 +23,9 @@ import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
+import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
+import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +41,7 @@ public class BRActive {
 	private final StructureTemplate plotGround;
 	private final List<StructureTemplate> plotStructures;
 
-	private final HashMap<UUID, PlayerData> playerDataMap;
+	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private StructureTemplate plotStructure;
 
 	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<StructureTemplate> plotStructures) {
@@ -56,6 +65,7 @@ public class BRActive {
 			activity.deny(GameRuleType.CRAFTING);
 			activity.deny(GameRuleType.PORTALS);
 			activity.deny(GameRuleType.PVP);
+			activity.deny(GameRuleType.BREAK_BLOCKS);
 			activity.deny(GameRuleType.HUNGER);
 			activity.deny(GameRuleType.FALL_DAMAGE);
 			activity.deny(GameRuleType.BLOCK_DROPS);
@@ -68,28 +78,51 @@ public class BRActive {
 
 			//activity.listen(GamePlayerEvents.OFFER, active::offerPlayer);
 
-			//activity.listen(PlayerDeathEvent.EVENT, active::killPlayer);
-			//activity.listen(ItemThrowEvent.EVENT, active::dropItem);
-			//activity.listen(BlockPlaceEvent.BEFORE, active::placeBlock);
-			//activity.listen(BlockBreakEvent.EVENT, active::breakBlock);
-			//activity.listen(BlockUseEvent.EVENT, active::useBlock);
+			activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
+				this.resetPlayer(player);
+				return ActionResult.FAIL;
+			});
+			activity.listen(BlockPlaceEvent.BEFORE, active::placeBlock);
+			activity.listen(BlockPunchEvent.EVENT, active::punchBlock);
 		});
 
 		return GameResult.ok();
 	}
 
-	public List<PlayerData> getAlivePlayers() {
+	public List<BRPlayerData> getAlivePlayers() {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
+	}
+
+	public void pickPlotStructure() {
+		this.plotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
+	}
+
+	public void resetPlayer(ServerPlayerEntity player) {
+		var data = playerDataMap.get(player.getUuid());
+		boolean spectator = data == null || data.eliminated;
+
+		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(spectator ? center.center() : data.plot.center())).toCenterPos();
+		player.teleport(pos.getX(), pos.getY(), pos.getZ());
+
+		player.setHealth(20.0f);
+		player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+		if(!spectator) {
+			player.getAbilities().allowFlying = true;
+			player.getAbilities().flying = false;
+			player.sendAbilitiesUpdate();
+		}
+		player.getHungerManager().setFoodLevel(20);
+		player.getHungerManager().setSaturationLevel(20.0f);
 	}
 
 	public void enable() {
 		this.pickPlotStructure();
 		for(var player : this.space.getPlayers()) {
-			this.playerDataMap.putIfAbsent(player.getUuid(), new PlayerData());
+			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
 		}
 		//TODO: remove this
-		for(int i = 0; i < 1; i++) {
-			this.playerDataMap.putIfAbsent(UUID.randomUUID(), new PlayerData());
+		for(int i = 0; i < 11; i++) {
+			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
 		}
 		this.calcPlatformsAndPlots();
 		this.placePlatforms(true);
@@ -103,51 +136,66 @@ public class BRActive {
 
 	}
 
-	public void pickPlotStructure() {
-		this.plotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
+
+	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data == null || data.eliminated) {
+			return ActionResult.FAIL;
+		}
+		if(data.plot.contains(pos)) {
+			return ActionResult.SUCCESS;
+		}
+		return ActionResult.FAIL;
 	}
 
-	public void resetPlayer(ServerPlayerEntity player) {
-		var data = playerDataMap.get(player.getUuid());
 
-		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data == null || data.eliminated ? center.center() : data.plot.center())).toCenterPos();
-		player.teleport(pos.getX(), pos.getY(), pos.getZ());
-
-		player.setHealth(20.0f);
-		player.changeGameMode(GameMode.ADVENTURE);
-		player.getHungerManager().setFoodLevel(20);
-		player.getHungerManager().setSaturationLevel(20.0f);
+	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data == null || data.eliminated) {
+			return ActionResult.FAIL;
+		}
+		if(data.plot.contains(pos)) {
+			var state = this.world.getBlockState(pos);
+			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+			this.world.addParticle(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0);
+			player.giveItemStack(PlotUtil.convert(state));
+			return ActionResult.SUCCESS;
+		}
+		return ActionResult.FAIL;
 	}
 
 	public void calcPlatformsAndPlots() {
 		var alivePlayers = getAlivePlayers();
+		int n = alivePlayers.size();
 
 		//TODO: remove previous platforms here
 
-		var structureSize = this.platform.getSize();
+		var platformSize = this.platform.getSize();
 		var plotOffset = this.config.map().plotOffset();
 		var plotSize = this.plotGround.getSize().getX();
 
 		int centerSizeX = this.center.max().getX() - this.center.min().getX();
 		int centerSizeY = this.center.max().getZ() - this.center.min().getZ();
-		double r = 0.5 * Math.max(Math.max(centerSizeX, centerSizeY), Math.sqrt(alivePlayers.size()) * Math.max(structureSize.getX(), structureSize.getZ()) + this.config.map().platformSpacing());
+
+		// C = (sqrt((A/2)^2 + (B/2)^2) + X/2) / sin(pi/N)
+		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) / Math.sin(Math.PI / n);
 		// i owe chat gpt a beer for this one ^
-		double thetaStep = 2 * Math.PI / alivePlayers.size();
+		double thetaStep = 2 * Math.PI / n;
 
 		int index = 0;
 		for(var alivePlayer : alivePlayers) {
 			double theta = index++ * thetaStep;
 
 			int x = MathHelper.floor(Math.cos(theta) * r);
-			int y = center.max().getY() + structureSize.getY() - this.config.map().plotOffset().getY();
+			int y = center.max().getY() + platformSize.getY() - this.config.map().plotOffset().getY();
 			int z = MathHelper.floor(Math.sin(theta) * r);
 
-			int x1 = MathHelper.floor(structureSize.getX() / 2.0);
-			int y1 = MathHelper.floor(structureSize.getY() / 2.0);
-			int z1 = MathHelper.floor(structureSize.getZ() / 2.0);
-			int x2 = structureSize.getX() - x1 - 1;
-			int y2 = structureSize.getY() - y1 - 1;
-			int z2 = structureSize.getZ() - z1 - 1;
+			int x1 = MathHelper.floor(platformSize.getX() / 2.0);
+			int y1 = MathHelper.floor(platformSize.getY() / 2.0);
+			int z1 = MathHelper.floor(platformSize.getZ() / 2.0);
+			int x2 = platformSize.getX() - x1 - 1;
+			int y2 = platformSize.getY() - y1 - 1;
+			int z2 = platformSize.getZ() - z1 - 1;
 
 			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y - y1, z - z1);
 			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, y + y2, z + z2);
@@ -195,8 +243,8 @@ public class BRActive {
 		}
 	}
 
-	public void placeCenterPlatform(boolean spawnPlot) {
-		var plotPos = this.center.min();
+	public void placeCenterPlot() {
+		var plotPos = this.centerPlot.min();
 		boolean shouldPlacePlotGround = this.plotStructure.getSize().getY() > this.plotGround.getSize().getX();
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();
@@ -205,8 +253,7 @@ public class BRActive {
 	}
 
 	public void destroyCenterPlot() {
-		var plot = this.center;
-		for(var pos : plot) {
+		for(var pos : this.center) {
 			if(world.getBlockState(pos).getBlock() != Blocks.AIR) {
 				world.addParticle(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0);
 				world.setBlockState(pos, Blocks.AIR.getDefaultState());
