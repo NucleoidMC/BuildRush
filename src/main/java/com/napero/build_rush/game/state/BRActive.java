@@ -9,6 +9,7 @@ import net.minecraft.item.ItemUsageContext;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.text.Text;
@@ -156,8 +157,11 @@ public class BRActive {
 		}
 		if(data.plot.contains(pos)) {
 			var state = this.world.getBlockState(pos);
+			var center = pos.toCenterPos();
+
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-			this.world.addParticle(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0);
+			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
 			player.giveItemStack(PlotUtil.convert(state));
 			return ActionResult.SUCCESS;
 		}
@@ -236,8 +240,8 @@ public class BRActive {
 			var plot = alivePlayer.plot;
 			for(var pos : plot) {
 				if(world.getBlockState(pos).getBlock() != Blocks.AIR) {
-					world.addParticle(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0);
-					world.setBlockState(pos, Blocks.AIR.getDefaultState());
+					this.world.spawnParticles(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 10, 0, 0, 0, 1);
+					this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 				}
 			}
 		}
