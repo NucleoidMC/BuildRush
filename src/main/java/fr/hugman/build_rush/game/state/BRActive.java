@@ -118,7 +118,6 @@ public class BRActive {
 	/*=========*/
 
 	public void enable() {
-		this.pickPlotStructure();
 		for(var player : this.space.getPlayers()) {
 			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
 		}
@@ -128,7 +127,6 @@ public class BRActive {
 		}
 		this.calcPlatformsAndPlots();
 		this.placeAlivePlayerPlatforms();
-		this.placeAlivePlayerPlots();
 
 		for(var player : this.space.getPlayers()) {
 			this.resetPlayer(player);
