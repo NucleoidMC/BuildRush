@@ -16,6 +16,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.text.Text;
@@ -30,6 +31,7 @@ import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.stimuli.event.block.BlockBreakEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
@@ -102,6 +104,7 @@ public class BRActive {
 			});
 			activity.listen(BlockPlaceEvent.BEFORE, active::placeBlock);
 			activity.listen(BlockPunchEvent.EVENT, active::punchBlock);
+			activity.listen(BlockBreakEvent.EVENT, active::breakBlock);
 		});
 
 		return GameResult.ok();
@@ -209,6 +212,11 @@ public class BRActive {
 	}
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
+		return breakBlock(player, this.world, pos);
+	}
+
+	private ActionResult breakBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
+		//TODO: this doesn't trigger for blocks placed against other blocks (banners, torches, lanterns, etc...)
 		var data = this.playerDataMap.get(player.getUuid());
 		if(data == null || data.eliminated) {
 			return ActionResult.FAIL;
@@ -221,7 +229,6 @@ public class BRActive {
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
-			return ActionResult.SUCCESS;
 		}
 		return ActionResult.FAIL;
 	}
@@ -337,6 +344,7 @@ public class BRActive {
 		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		for(var alivePlayer : alivePlayers) {
+			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
 			var plotPos = alivePlayer.plot.min();
 			if(shouldPlacePlotGround) {
 				plotPos = plotPos.down();
@@ -358,6 +366,7 @@ public class BRActive {
 		var alivePlayers = getAlivePlayers();
 		for(var alivePlayer : alivePlayers) {
 			var plot = alivePlayer.plot;
+			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 			for(var pos : plot) {
 				this.removeBlock(pos);
 			}
@@ -371,6 +380,7 @@ public class BRActive {
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();
 		}
+		this.world.playSound(null, new BlockPos(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
 		structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		this.calcInventory();
 	}
@@ -381,6 +391,7 @@ public class BRActive {
 	}
 
 	public void removeCenterPlot() {
+		this.world.playSound(null, new BlockPos(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 		for(var pos : this.centerPlot) {
 			this.removeBlock(pos);
 		}

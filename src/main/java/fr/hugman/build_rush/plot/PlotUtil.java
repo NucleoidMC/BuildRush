@@ -16,10 +16,6 @@ import net.minecraft.world.World;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 public class PlotUtil {
-	public static ItemStack convert(BlockState state) {
-		return new ItemStack(state.getBlock());
-	}
-
 	public static ItemStack stackForBlock(World world, BlockPos pos) {
 		var state = world.getBlockState(pos);
 		var stack = state.getBlock().getPickStack(world, pos, state);
@@ -34,6 +30,7 @@ public class PlotUtil {
 		if(state.getFluidState().getFluid() == Fluids.LAVA) {
 			stack = new ItemStack(Items.LAVA_BUCKET);
 		}
+		// TODO: verify for vines and sculk veins
 
 		if(state.hasBlockEntity()) {
 			var blockEntity = world.getBlockEntity(pos);
