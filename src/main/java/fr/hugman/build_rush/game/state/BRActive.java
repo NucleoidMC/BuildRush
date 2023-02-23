@@ -3,17 +3,22 @@ package fr.hugman.build_rush.game.state;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.game.BRPlayerData;
+import fr.hugman.build_rush.game.BRRound;
 import fr.hugman.build_rush.plot.PlotStructure;
 import fr.hugman.build_rush.plot.PlotUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -29,6 +34,7 @@ import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +51,11 @@ public class BRActive {
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private PlotStructure currentPlotStructure;
+	private List<ItemStack> inventory;
+
+	private int tick;
+	private final BRRound round;
+	private boolean canBuild;
 
 	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<PlotStructure> plotStructures) {
 		this.config = config;
@@ -58,6 +69,11 @@ public class BRActive {
 
 		this.playerDataMap = new HashMap<>();
 		this.currentPlotStructure = null;
+		this.inventory = new ArrayList<>();
+
+		this.round = new BRRound(this, 20, 60);
+		this.tick = 0;
+		this.canBuild = false;
 	}
 
 	public GameResult transferActivity() {
@@ -91,12 +107,148 @@ public class BRActive {
 		return GameResult.ok();
 	}
 
+	/*=========*/
+	/*  LOGIC  */
+	/*=========*/
+
+	public void enable() {
+		this.pickPlotStructure();
+		for(var player : this.space.getPlayers()) {
+			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
+		}
+		if(BuildRush.DEBUG) {
+			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
+			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
+		}
+		this.calcPlatformsAndPlots();
+		this.placeAlivePlayerPlatforms();
+		this.placeAlivePlayerPlots();
+
+		for(var player : this.space.getPlayers()) {
+			this.resetPlayer(player);
+		}
+	}
+
+	public void tick() {
+		this.tick++;
+		this.round.tick();
+		if(this.tick % 20 == 0) {
+			// update sidebar
+		}
+	}
+
+	public void canBuild(boolean canBuild) {
+		this.canBuild = canBuild;
+	}
+
+	public void eliminateLastPlayer() {
+		//TODO
+	}
+
+	public void calcInventory() {
+		this.inventory.clear();
+		for(var pos : this.centerPlot) {
+			var stack = PlotUtil.stackForBlock(world, pos);
+			this.inventory.add(stack);
+		}
+	}
+
+	public void giveInventory() {
+		for(var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
+			if(data == null || data.eliminated) {
+				continue;
+			}
+			for(var stack : inventory) {
+				this.give(player, stack);
+			}
+		}
+	}
+
+	public void giveBlock(PlayerEntity player, BlockPos pos) {
+		this.give(player, PlotUtil.stackForBlock(world, pos));
+	}
+
+	public void give(PlayerEntity player, ItemStack stack) {
+		if(stack.isOf(Items.FLINT_AND_STEEL)) {
+			// only give it if they don't have it already
+			for(var item : player.getInventory().main) {
+				if(item.isOf(Items.FLINT_AND_STEEL)) {
+					return;
+				}
+			}
+			if(player.getInventory().offHand.get(0).isOf(Items.FLINT_AND_STEEL)) {
+				return;
+			}
+		}
+
+		if(stack.isOf(Items.WATER_BUCKET)) {
+			// only give it if they don't have it already
+			for(var item : player.getInventory().main) {
+				if(item.isOf(Items.WATER_BUCKET)) {
+					return;
+				}
+			}
+		}
+		player.giveItemStack(stack.copy());
+	}
+
+	/*=============*/
+	/*  LISTENERS  */
+	/*=============*/
+
+	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data == null || data.eliminated) {
+			return ActionResult.FAIL;
+		}
+		if(this.canBuild && data.plot.contains(pos)) {
+			return ActionResult.SUCCESS;
+		}
+		return ActionResult.FAIL;
+	}
+
+	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data == null || data.eliminated) {
+			return ActionResult.FAIL;
+		}
+		if(this.canBuild && data.plot.contains(pos)) {
+			var state = this.world.getBlockState(pos);
+			var center = pos.toCenterPos();
+
+			this.giveBlock(player, pos);
+			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+			return ActionResult.SUCCESS;
+		}
+		return ActionResult.FAIL;
+	}
+
+	/*===========*/
+	/*  UTILITY  */
+	/*===========*/
+
+	public void sendMessage(String text) {
+		this.space.getPlayers().sendMessage(Text.literal(text));
+	}
+
 	public List<BRPlayerData> getAlivePlayers() {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
 	}
 
 	public void pickPlotStructure() {
 		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
+	}
+
+	public void resetAlivePlayers() {
+		for(var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
+			if(data != null && !data.eliminated) {
+				this.resetPlayer(player);
+			}
+		}
 	}
 
 	public void resetPlayer(ServerPlayerEntity player) {
@@ -117,61 +269,17 @@ public class BRActive {
 		player.getHungerManager().setSaturationLevel(20.0f);
 	}
 
-	public void enable() {
-		this.pickPlotStructure();
-		for(var player : this.space.getPlayers()) {
-			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
-		}
-		if(BuildRush.DEBUG) {
-			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
-			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
-		}
-		this.calcPlatformsAndPlots();
-		this.placePlayerPlatforms(true);
-
-		for(var player : this.space.getPlayers()) {
-			this.resetPlayer(player);
-		}
-	}
-
-	public void tick() {
-
-	}
-
-	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
-		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated) {
-			return ActionResult.FAIL;
-		}
-		if(data.plot.contains(pos)) {
-			return ActionResult.SUCCESS;
-		}
-		return ActionResult.FAIL;
-	}
-
-	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated) {
-			return ActionResult.FAIL;
-		}
-		if(data.plot.contains(pos)) {
-			var state = this.world.getBlockState(pos);
-			var center = pos.toCenterPos();
-
+	public void removeBlock(BlockPos pos) {
+		if(!world.getBlockState(pos).isAir()) {
+			var particlePos = pos.toCenterPos();
+			this.world.spawnParticles(ParticleTypes.CLOUD, particlePos.getX(), particlePos.getY(), particlePos.getZ(), 2, 0.5, 0.5, 0.5, 0.1D);
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
-			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
-			player.giveItemStack(PlotUtil.convert(state));
-			return ActionResult.SUCCESS;
 		}
-		return ActionResult.FAIL;
 	}
 
 	public void calcPlatformsAndPlots() {
 		var alivePlayers = getAlivePlayers();
 		int n = alivePlayers.size();
-
-		//TODO: remove previous platforms here
 
 		var platformSize = this.platform.getSize();
 		var plotOffset = this.config.map().plotOffset();
@@ -214,36 +322,44 @@ public class BRActive {
 		}
 	}
 
-	public void placePlayerPlatforms(boolean spawnPlots) {
+	public void placeAlivePlayerPlatforms() {
 		var alivePlayers = getAlivePlayers();
 
 		for(var alivePlayer : alivePlayers) {
 			var platformPos = alivePlayer.platform.min();
 			this.platform.place(world, platformPos, platformPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
+	}
 
-		if(spawnPlots) {
-			var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
-			boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
-			for(var alivePlayer : alivePlayers) {
-				var plotPos = alivePlayer.plot.min();
-				if(shouldPlacePlotGround) {
-					plotPos = plotPos.down();
-				}
-				structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+	public void placeAlivePlayerPlots() {
+		var alivePlayers = getAlivePlayers();
+
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
+		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
+		for(var alivePlayer : alivePlayers) {
+			var plotPos = alivePlayer.plot.min();
+			if(shouldPlacePlotGround) {
+				plotPos = plotPos.down();
 			}
+			structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
 	}
 
-	public void destroyPlayerPlots() {
+	public void placeAlivePlayerPlotGrounds() {
+		var alivePlayers = getAlivePlayers();
+
+		for(var alivePlayer : alivePlayers) {
+			var plotPos = alivePlayer.plot.min().down();
+			this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+		}
+	}
+
+	public void removeAlivePlayerPlots() {
 		var alivePlayers = getAlivePlayers();
 		for(var alivePlayer : alivePlayers) {
 			var plot = alivePlayer.plot;
 			for(var pos : plot) {
-				if(world.getBlockState(pos).getBlock() != Blocks.AIR) {
-					this.world.spawnParticles(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 10, 0, 0, 0, 1);
-					this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-				}
+				this.removeBlock(pos);
 			}
 		}
 	}
@@ -256,14 +372,17 @@ public class BRActive {
 			plotPos = plotPos.down();
 		}
 		structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+		this.calcInventory();
 	}
 
-	public void destroyCenterPlot() {
-		for(var pos : this.center) {
-			if(world.getBlockState(pos).getBlock() != Blocks.AIR) {
-				world.addParticle(ParticleTypes.CLOUD, pos.getX(), pos.getY(), pos.getZ(), 0, 0, 0);
-				world.setBlockState(pos, Blocks.AIR.getDefaultState());
-			}
+	public void placeCenterPlotGround() {
+		var plotPos = this.centerPlot.min().down();
+		this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+	}
+
+	public void removeCenterPlot() {
+		for(var pos : this.centerPlot) {
+			this.removeBlock(pos);
 		}
 	}
 }
