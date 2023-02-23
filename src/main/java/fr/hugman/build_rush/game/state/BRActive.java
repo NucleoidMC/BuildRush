@@ -168,6 +168,16 @@ public class BRActive {
 		}
 	}
 
+	public void clearInventory() {
+		for(var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
+			if(data == null || data.eliminated) {
+				continue;
+			}
+			player.getInventory().clear();
+		}
+	}
+
 	public void giveBlock(PlayerEntity player, BlockPos pos) {
 		this.give(player, PlotUtil.stackForBlock(world, pos));
 	}

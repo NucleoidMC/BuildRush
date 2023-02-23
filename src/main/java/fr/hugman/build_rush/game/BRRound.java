@@ -87,6 +87,7 @@ public class BRRound {
 					if(BuildRush.DEBUG) this.active.sendMessage("build_end");
 					this.active.canBuild(false);
 					// TODO: empty inventory
+					this.active.clearInventory();
 				}
 				case ELIMINATION_START -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("elimination_start");
