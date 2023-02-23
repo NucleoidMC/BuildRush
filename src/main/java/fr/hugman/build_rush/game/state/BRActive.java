@@ -27,6 +27,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import xyz.nucleoid.map_templates.BlockBounds;
+import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
@@ -50,6 +51,7 @@ public class BRActive {
 	private final StructureTemplate platform;
 	private final StructureTemplate plotGround;
 	private final List<PlotStructure> plotStructures;
+	private final List<PlotStructure> usedPlotStructures;
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private PlotStructure currentPlotStructure;
@@ -68,6 +70,7 @@ public class BRActive {
 		this.platform = platform;
 		this.plotGround = plotGround;
 		this.plotStructures = plotStructures;
+		this.usedPlotStructures = new ArrayList<>();
 
 		this.playerDataMap = new HashMap<>();
 		this.currentPlotStructure = null;
@@ -256,7 +259,17 @@ public class BRActive {
 	}
 
 	public void pickPlotStructure() {
+		if(this.plotStructures.isEmpty()) {
+			this.plotStructures.addAll(this.usedPlotStructures);
+			this.usedPlotStructures.clear();
+			BuildRush.debug("No plot structures left, filling the list with used plot structures again...");
+		}
+		if(this.plotStructures.isEmpty()) {
+			throw new GameOpenException(Text.literal("No plot structures available! HOW!?"));
+		}
 		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
+		this.plotStructures.remove(this.currentPlotStructure);
+		this.usedPlotStructures.add(this.currentPlotStructure);
 	}
 
 	public void resetAlivePlayers() {
