@@ -18,6 +18,20 @@
     "platform_spacing": 10
   },
   "structures": [
-    "build_rush:lonely_tree"
+    "build_rush:bed_defense",
+    "build_rush:bush_maze",
+    "build_rush:cactus",
+    "build_rush:colored_blocks",
+    "build_rush:enchanter",
+    "build_rush:fountain",
+    "build_rush:intentional_game_design",
+    "build_rush:logs",
+    "build_rush:lonely_tree",
+    "build_rush:mushroom_island",
+    "build_rush:nether_fortress",
+    "build_rush:ore_passthrough",
+    "build_rush:red_orb",
+    "build_rush:sandcastle",
+    "build_rush:tnt"
   ]
 }

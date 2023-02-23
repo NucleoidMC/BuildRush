@@ -1,8 +1,22 @@
 {
   "game.build_rush": "Build Rush",
 
-  "map.build_rush.test": "Build Rush: Test"
   "map.build_rush.test": "Build Rush: Test",
 
-  "plot_structure.lonely_tree": "Lonely Tree"
+  "plot_structure.bed_defense": "Bed Defense",
+  "plot_structure.bush_maze": "Bush Maze",
+  "plot_structure.cactus": "Cactus",
+  "plot_structure.chicken": "Chicken",
+  "plot_structure.colored_blocks": "Colored Blocks",
+  "plot_structure.enchanter": "Enchanter",
+  "plot_structure.fountain": "Fountain",
+  "plot_structure.intentional_game_design": "[Intentional Game Design]",
+  "plot_structure.logs": "Logs",
+  "plot_structure.lonely_tree": "Lonely Tree",
+  "plot_structure.mushroom_island": "Mushroom Island",
+  "plot_structure.nether_fortress": "Nether Fortress",
+  "plot_structure.ore_passthrough": "Ore Pass-through",
+  "plot_structure.red_orb": "Red Orb",
+  "plot_structure.sandcastle": "Sandcastle",
+  "plot_structure.tnt": "TNT"
 }
