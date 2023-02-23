@@ -6,13 +6,11 @@ import fr.hugman.build_rush.game.state.BRActive;
 public class BRRound {
 	public static final int MEMORIZE_START    = 0;
 	public static final int MEMORIZE          = 1;
-	public static final int MEMORIZE_END      = 2;
-	public static final int BUILD_START       = 3;
-	public static final int BUILD             = 4;
-	public static final int BUILD_END         = 5;
-	public static final int ELIMINATION_START = 6;
-	public static final int ELIMINATION       = 7;
-	public static final int END               = 8;
+	public static final int BUILD             = 2;
+	public static final int BUILD_END         = 3;
+	public static final int ELIMINATION_START = 4;
+	public static final int ELIMINATION       = 5;
+	public static final int END               = 6;
 
 	private final BRActive active;
 	private int number;
@@ -25,7 +23,7 @@ public class BRRound {
 		this.number = 1;
 		this.tick = 0;
 		this.state = -1;
-		this.lenghts = new int[]{2, memorizeTime, 2, 3, buildTime, 3, 2, 3, 3};
+		this.lenghts = new int[]{2, memorizeTime, buildTime, 3, 2, 3, 3};
 		for(int i = 0; i < this.lenghts.length; i++) {
 			this.lenghts[i] *= 20;
 		}
@@ -69,16 +67,9 @@ public class BRRound {
 					this.active.placeCenterPlotGround();
 					// TODO: bossbar countdown
 				}
-				case MEMORIZE_END -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("memorize_end");
-					this.active.removeAlivePlayerPlots();
-				}
-				case BUILD_START -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("build_start");
-					// TODO: title countdown
-				}
 				case BUILD -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("build");
+					this.active.removeAlivePlayerPlots();
 					this.active.canBuild(true);
 					this.active.giveInventory();
 					// TODO: bossbar countdown
@@ -86,7 +77,6 @@ public class BRRound {
 				case BUILD_END -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("build_end");
 					this.active.canBuild(false);
-					// TODO: empty inventory
 					this.active.clearInventory();
 				}
 				case ELIMINATION_START -> {
