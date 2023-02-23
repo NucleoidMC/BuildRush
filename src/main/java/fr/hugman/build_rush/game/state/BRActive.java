@@ -289,7 +289,7 @@ public class BRActive {
 		int centerSizeY = this.center.max().getZ() - this.center.min().getZ();
 
 		// C = (sqrt((A/2)^2 + (B/2)^2) + X/2) / sin(pi/N)
-		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) / Math.sin(Math.PI / n);
+		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + (Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) + this.config.map().platformSpacing())/ Math.sin(Math.PI / n);
 		// i owe chat gpt a beer for this one ^
 		double thetaStep = 2 * Math.PI / n;
 

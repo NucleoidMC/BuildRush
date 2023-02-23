@@ -15,7 +15,7 @@
     "plot_ground": "build_rush:plot_ground/test",
     "center_plot_offset": [1, 1, 1],
     "platform_plot_offset": [3, 1, 3],
-    "platform_spacing": 10
+    "platform_spacing": 5
   },
   "structures": [
     "build_rush:bed_defense",
