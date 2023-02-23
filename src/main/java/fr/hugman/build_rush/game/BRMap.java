@@ -1,4 +1,4 @@
-package fr.hugman.build_rush.map;
+package fr.hugman.build_rush.game;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

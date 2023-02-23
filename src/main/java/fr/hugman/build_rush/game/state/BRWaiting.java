@@ -2,8 +2,9 @@ package fr.hugman.build_rush.game.state;
 
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.plot.PlotStructure;
+import fr.hugman.build_rush.registry.BRRegistries;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.structure.StructureTemplate;
 import net.minecraft.structure.StructureTemplateManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -100,13 +101,18 @@ public class BRWaiting {
 	}
 
 
-	public static List<StructureTemplate> getPlotStructures(int plotSize, BRConfig config, StructureTemplateManager manager) {
-		List<StructureTemplate> plotStructures = new ArrayList<>();
-		for(Identifier plot : config.structures()) {
-			// Get the structure
-			var structure = manager.getTemplate(plot).orElseThrow(() -> new IllegalStateException("Could not find structure: " + plot.toString()));
+	public static List<PlotStructure> getPlotStructures(int plotSize, BRConfig config, StructureTemplateManager manager) {
+		List<PlotStructure> plotStructures = new ArrayList<>();
+		for(Identifier plot : config.plotStructures()) {
+			// Get the plot structure
+			var plotStructure = BRRegistries.PLOT_STRUCTURE.get(plot);
 
-			// Verify that the structure is the correct size
+			if(plotStructure == null) {
+				throw new GameOpenException(Text.literal("Plot structure not found: " + plot.toString()));
+			}
+
+			// Verify that the structure is here and is of the correct size
+			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.literal("Could not find structure: " + plot.toString())));
 			if(structure.getSize().getX() != plotSize ||
 					structure.getSize().getZ() != plotSize ||
 					structure.getSize().getY() < plotSize || structure.getSize().getY() > plotSize + 1) {
@@ -115,7 +121,7 @@ public class BRWaiting {
 						plotSize + "," + (plotSize + 1) + "," + plotSize + " got " +
 						structure.getSize().getX() + "," + structure.getSize().getY() + "," + structure.getSize().getZ() + ")"));
 			}
-			plotStructures.add(structure);
+			plotStructures.add(plotStructure);
 		}
 		if(plotStructures.size() == 0) {
 			throw new GameOpenException(Text.literal("No structures were found!"));

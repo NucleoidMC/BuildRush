@@ -1,7 +1,9 @@
 package fr.hugman.build_rush.game.state;
 
 import fr.hugman.build_rush.BRConfig;
+import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.game.BRPlayerData;
+import fr.hugman.build_rush.plot.PlotStructure;
 import fr.hugman.build_rush.plot.PlotUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -39,12 +41,12 @@ public class BRActive {
 	private final BlockBounds centerPlot;
 	private final StructureTemplate platform;
 	private final StructureTemplate plotGround;
-	private final List<StructureTemplate> plotStructures;
+	private final List<PlotStructure> plotStructures;
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
-	private StructureTemplate plotStructure;
+	private PlotStructure currentPlotStructure;
 
-	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<StructureTemplate> plotStructures) {
+	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<PlotStructure> plotStructures) {
 		this.config = config;
 		this.space = space;
 		this.world = world;
@@ -55,7 +57,7 @@ public class BRActive {
 		this.plotStructures = plotStructures;
 
 		this.playerDataMap = new HashMap<>();
-		this.plotStructure = null;
+		this.currentPlotStructure = null;
 	}
 
 	public GameResult transferActivity() {
@@ -94,7 +96,7 @@ public class BRActive {
 	}
 
 	public void pickPlotStructure() {
-		this.plotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
+		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
 	}
 
 	public void resetPlayer(ServerPlayerEntity player) {
@@ -120,8 +122,12 @@ public class BRActive {
 		for(var player : this.space.getPlayers()) {
 			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
 		}
+		if(BuildRush.DEBUG) {
+			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
+			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
+		}
 		this.calcPlatformsAndPlots();
-		this.placePlatforms(true);
+		this.placePlayerPlatforms(true);
 
 		for(var player : this.space.getPlayers()) {
 			this.resetPlayer(player);
@@ -131,7 +137,6 @@ public class BRActive {
 	public void tick() {
 
 	}
-
 
 	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
 		var data = this.playerDataMap.get(player.getUuid());
@@ -143,7 +148,6 @@ public class BRActive {
 		}
 		return ActionResult.FAIL;
 	}
-
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
 		var data = this.playerDataMap.get(player.getUuid());
@@ -210,21 +214,23 @@ public class BRActive {
 		}
 	}
 
-	public void placePlatforms(boolean spawnPlots) {
+	public void placePlayerPlatforms(boolean spawnPlots) {
 		var alivePlayers = getAlivePlayers();
+
 		for(var alivePlayer : alivePlayers) {
 			var platformPos = alivePlayer.platform.min();
 			this.platform.place(world, platformPos, platformPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
 
 		if(spawnPlots) {
-			boolean shouldPlacePlotGround = this.plotStructure.getSize().getY() > this.plotGround.getSize().getX();
+			var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
+			boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 			for(var alivePlayer : alivePlayers) {
 				var plotPos = alivePlayer.plot.min();
 				if(shouldPlacePlotGround) {
 					plotPos = plotPos.down();
 				}
-				this.plotStructure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+				structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 			}
 		}
 	}
@@ -244,11 +250,12 @@ public class BRActive {
 
 	public void placeCenterPlot() {
 		var plotPos = this.centerPlot.min();
-		boolean shouldPlacePlotGround = this.plotStructure.getSize().getY() > this.plotGround.getSize().getX();
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
+		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();
 		}
-		this.plotStructure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+		structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 	}
 
 	public void destroyCenterPlot() {
