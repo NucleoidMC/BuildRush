@@ -25,7 +25,7 @@ public class BRRound {
 		this.number = 1;
 		this.tick = 0;
 		this.state = -1;
-		this.lenghts = new int[]{5, memorizeTime, 3, 5, buildTime, 3, 5, 3, 3};
+		this.lenghts = new int[]{2, memorizeTime, 2, 3, buildTime, 3, 2, 3, 3};
 		for(int i = 0; i < this.lenghts.length; i++) {
 			this.lenghts[i] *= 20;
 		}
