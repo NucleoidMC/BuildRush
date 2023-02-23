@@ -10,8 +10,10 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.World;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
@@ -23,6 +25,7 @@ import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.game.world.generator.TemplateChunkGenerator;
+import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 import java.io.IOException;
@@ -61,17 +64,23 @@ public class BRWaiting {
 				BuildRush.debug("Plot ground structure size: " + plotSize);
 				var plotStructures = getPlotStructures(plotSize, config, templateManager);
 				var centerPlot = getCenterPlot(centerRegion, config.map().centerPlotOffset(), plotSize);
+				var spawnPos = new BlockPos(centerBounds.center());
 
+				activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
+					resetPlayer(player, world, spawnPos);
+					return ActionResult.FAIL;
+				});
 				activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
-					resetPlayer(player);
-					var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(centerBounds.center())).toCenterPos();
-					player.teleport(pos.getX(), pos.getY(), pos.getZ());
+					resetPlayer(player, world, spawnPos);
 					return ActionResult.FAIL;
 				});
 
-				activity.listen(GamePlayerEvents.OFFER, offer ->
-						offer.accept(world, world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(centerBounds.center())).toCenterPos()).and(() ->
-								resetPlayer(offer.player())));
+				activity.listen(GamePlayerEvents.OFFER, offer -> {
+					var accept = offer.accept(world, centerBounds.center().withAxis(Direction.Axis.Y, world.getTopY()));
+					resetPlayer(offer.player(), world, spawnPos);
+					return accept;
+				});
+
 
 				activity.listen(GameActivityEvents.REQUEST_START, () -> {
 					var active = new BRActive(config, activity.getGameSpace(), world, centerBounds, centerPlot, platform, plotGround, plotStructures);
@@ -83,7 +92,10 @@ public class BRWaiting {
 		}
 	}
 
-	public static void resetPlayer(ServerPlayerEntity player) {
+	public static void resetPlayer(ServerPlayerEntity player, World world, BlockPos blockPos) {
+		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, blockPos).toCenterPos();
+		player.teleport(pos.getX(), pos.getY(), pos.getZ());
+
 		player.setHealth(20.0f);
 		player.changeGameMode(GameMode.ADVENTURE);
 		player.getHungerManager().setFoodLevel(20);
