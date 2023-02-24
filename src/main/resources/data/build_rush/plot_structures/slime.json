@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:slime",
+  "structure": "build_rush:plot/slime",
   "name": {
     "translate": "plot_structure.slime"
   },

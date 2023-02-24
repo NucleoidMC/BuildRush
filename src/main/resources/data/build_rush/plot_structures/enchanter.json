@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:enchanter",
+  "structure": "build_rush:plot/enchanter",
   "name": {
     "translate": "plot_structure.enchanter"
   },

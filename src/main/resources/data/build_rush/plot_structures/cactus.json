@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:cactus",
+  "structure": "build_rush:plot/cactus",
   "name": {
     "translate": "plot_structure.cactus"
   }

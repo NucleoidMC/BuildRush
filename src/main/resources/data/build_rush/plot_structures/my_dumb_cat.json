@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:my_dumb_cat",
+  "structure": "build_rush:plot/my_dumb_cat",
   "name": {
     "translate": "plot_structure.my_dumb_cat"
   },

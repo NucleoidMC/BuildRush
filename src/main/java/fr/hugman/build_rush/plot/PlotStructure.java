@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public record PlotStructure(Identifier id, Text name, Optional<Author> author) {
 	public static final Codec<PlotStructure> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			Identifier.CODEC.fieldOf("id").forGetter(PlotStructure::id),
+			Identifier.CODEC.fieldOf("structure").forGetter(PlotStructure::id),
 			PlasmidCodecs.TEXT.fieldOf("name").forGetter(PlotStructure::name),
 			Author.CODEC.optionalFieldOf("author").forGetter(PlotStructure::author)
 	).apply(instance, PlotStructure::new));

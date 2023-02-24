@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:sandcastle",
+  "structure": "build_rush:plot/sandcastle",
   "name": {
     "translate": "plot_structure.sandcastle"
   },

@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:red_orb",
+  "structure": "build_rush:plot/red_orb",
   "name": {
     "translate": "plot_structure.red_orb"
   },

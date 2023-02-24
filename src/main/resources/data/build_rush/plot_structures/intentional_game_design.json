@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:intentional_game_design",
+  "structure": "build_rush:plot/intentional_game_design",
   "name": {
     "translate": "plot_structure.intentional_game_design"
   },

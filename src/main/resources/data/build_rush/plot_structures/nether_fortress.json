@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:nether_fortress",
+  "structure": "build_rush:plot/nether_fortress",
   "name": {
     "translate": "plot_structure.nether_fortress"
   },
