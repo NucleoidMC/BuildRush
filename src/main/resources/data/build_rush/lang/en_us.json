@@ -25,5 +25,15 @@
   "plot_structure.sandcastle": "Sandcastle",
   "plot_structure.slime": "Slime",
   "plot_structure.tardis": "TARDIS",
-  "plot_structure.tnt": "TNT"
+  "plot_structure.tnt": "TNT",
+
+  "error.build_rush.region.center.not_found": "Region 'center' not found",
+  "error.build_rush.platform.not_found": "Platform structure '%s' is not available",
+  "error.build_rush.plot_ground.not_found": "Plot ground structure '%s' is not available",
+  "error.build_rush.plot_ground.invalid_width_length": "Plot ground structure must be square (found %d,%d, expected the same width and length)",
+  "error.build_rush.plot_ground.invalid_height": "Plot ground structure must be one block tall (found %d, expected 1)",
+  "error.build_rush.plot_structure.not_found": "Plot structure '%s' is not available",
+  "error.build_rush.plot_structure.invalid_size": "Plot structure '%s' is not of the correct size (found %d,%d,%d, expected %d,%d,%d or %d,%d,%d)",
+  "error.build_rush.plot_structure.none": "No plot structures are available",
+  "error.build_rush.plot_structure.none.weird": "No plot structures are available (what?)"
 }

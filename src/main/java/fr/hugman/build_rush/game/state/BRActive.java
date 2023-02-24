@@ -286,10 +286,9 @@ public class BRActive {
 		if(this.plotStructures.isEmpty()) {
 			this.plotStructures.addAll(this.usedPlotStructures);
 			this.usedPlotStructures.clear();
-			BuildRush.debug("No plot structures left, filling the list with used plot structures again...");
 		}
 		if(this.plotStructures.isEmpty()) {
-			throw new GameOpenException(Text.literal("No plot structures available! HOW!?"));
+			throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.none.weird"));
 		}
 		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
 		this.plotStructures.remove(this.currentPlotStructure);

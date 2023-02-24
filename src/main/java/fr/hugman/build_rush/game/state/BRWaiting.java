@@ -52,7 +52,7 @@ public class BRWaiting {
 
 			var centerRegion = template.getMetadata().getFirstRegion("center");
 			if(centerRegion == null) {
-				throw new GameOpenException(Text.literal("Map does not have a center region"));
+				throw new GameOpenException(Text.translatable("error.build_rush.region.center.not_found"));
 			}
 
 			return context.openWithWorld(worldConfig, (activity, world) -> {
@@ -61,16 +61,15 @@ public class BRWaiting {
 				StructureTemplateManager templateManager = world.getStructureTemplateManager();
 
 				var centerBounds = centerRegion.getBounds();
-				var platform = templateManager.getTemplate(config.map().platform()).orElseThrow(() -> new GameOpenException(Text.literal("Platform structure not found")));
-				var plotGround = templateManager.getTemplate(config.map().plotGround()).orElseThrow(() -> new GameOpenException(Text.literal("Plot ground structure not found")));
+				var platform = templateManager.getTemplate(config.map().platform()).orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.platform.not_found", config.map().platform())));
+				var plotGround = templateManager.getTemplate(config.map().plotGround()).orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.plot_ground.not_found", config.map().plotGround())));
 				if(plotGround.getSize().getX() != plotGround.getSize().getZ()) {
-					throw new GameOpenException(Text.literal("Plot ground structure must be square"));
+					throw new GameOpenException(Text.translatable("error.build_rush.plot_ground.invalid_width_length", plotGround.getSize().getX(), plotGround.getSize().getZ()));
 				}
 				if(plotGround.getSize().getY() != 1) {
-					throw new GameOpenException(Text.literal("Plot ground structure must be 1 block high"));
+					throw new GameOpenException(Text.translatable("error.build_rush.plot_ground.invalid_height", plotGround.getSize().getY()));
 				}
 				int plotSize = plotGround.getSize().getX();
-				BuildRush.debug("Plot ground structure size: " + plotSize);
 				var plotStructures = getPlotStructures(plotSize, config, templateManager);
 				var centerPlot = getCenterPlot(centerRegion, config.map().centerPlotOffset(), plotSize);
 				var spawnPos = new BlockPos(centerBounds.center());
@@ -129,23 +128,20 @@ public class BRWaiting {
 			var plotStructure = BRRegistries.PLOT_STRUCTURE.get(plot);
 
 			if(plotStructure == null) {
-				throw new GameOpenException(Text.literal("Plot structure not found: " + plot.toString()));
+				throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.not_found", plot.toString()));
 			}
 
 			// Verify that the structure is here and is of the correct size
-			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.literal("Could not find structure: " + plot.toString())));
+			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", plot.toString())));
 			if(structure.getSize().getX() != plotSize ||
 					structure.getSize().getZ() != plotSize ||
 					structure.getSize().getY() < plotSize || structure.getSize().getY() > plotSize + 1) {
-				throw new GameOpenException(Text.literal("Structure: " + plot.toString() + " is not the correct size! (Expected " +
-						plotSize + "," + plotSize + "," + plotSize + ", or " +
-						plotSize + "," + (plotSize + 1) + "," + plotSize + " got " +
-						structure.getSize().getX() + "," + structure.getSize().getY() + "," + structure.getSize().getZ() + ")"));
+				throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.invalid_size", plot.toString(), structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ(), plotSize, plotSize, plotSize, plotSize, plotSize, plotSize));
 			}
 			plotStructures.add(plotStructure);
 		}
 		if(plotStructures.size() == 0) {
-			throw new GameOpenException(Text.literal("No structures were found!"));
+			throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.none"));
 		}
 		return plotStructures;
 	}
