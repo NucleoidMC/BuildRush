@@ -118,7 +118,6 @@ public class BRActive {
 			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
 			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
 			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
-			activity.listen(BlockBreakEvent.EVENT, this::breakBlock);
 		});
 
 		return GameResult.ok();
@@ -147,6 +146,9 @@ public class BRActive {
 	public void tick() {
 		this.tick++;
 		this.round.tick();
+		for(var playerData : this.playerDataMap.values()) {
+			playerData.tick();
+		}
 		if(this.tick % 20 == 0) {
 			// update sidebar
 		}
@@ -243,16 +245,18 @@ public class BRActive {
 	}
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-		return breakBlock(player, this.world, pos);
-	}
-
-	private ActionResult breakBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
-		//TODO: this doesn't trigger for blocks placed against other blocks (banners, torches, lanterns, etc...)
 		var data = this.playerDataMap.get(player.getUuid());
 		if(data == null || data.eliminated) {
 			return ActionResult.FAIL;
 		}
 		if(this.canBuild && data.plot.contains(pos)) {
+			/*
+			  This currently doesn't work very well, so I'm disabling it for now
+			  If you hold the click it won't break the second block if you're still holding the click
+			if(data.breakingCooldown > 0) {
+				return ActionResult.FAIL;
+			}
+			 */
 			var state = this.world.getBlockState(pos);
 			var center = pos.toCenterPos();
 
@@ -260,6 +264,8 @@ public class BRActive {
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+			data.breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
+			return ActionResult.SUCCESS;
 		}
 		return ActionResult.FAIL;
 	}
@@ -300,15 +306,8 @@ public class BRActive {
 	}
 
 	public void resetPlayer(ServerPlayerEntity player) {
-		var data = playerDataMap.get(player.getUuid()); // This returns null sometimes (damage/death), why?
+		var data = playerDataMap.get(player.getUuid());
 		boolean spectator = data == null || data.eliminated;
-
-		for(var key : playerDataMap.keySet()) {
-			player.sendMessage(Text.literal("  " + key));
-		}
-		player.sendMessage(Text.literal(player.getUuid().toString()));
-		player.sendMessage(Text.literal("data null=" + (data == null)));
-		player.sendMessage(Text.literal("eliminated=" + (data != null && data.eliminated)));
 
 		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(spectator ? center.center() : data.plot.center())).toCenterPos();
 		player.teleport(pos.getX(), pos.getY(), pos.getZ());
