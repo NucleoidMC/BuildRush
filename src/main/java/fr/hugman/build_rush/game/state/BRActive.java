@@ -35,7 +35,6 @@ import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
-import xyz.nucleoid.stimuli.event.block.BlockBreakEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
@@ -279,7 +278,7 @@ public class BRActive {
 		this.space.getPlayers().sendMessage(Text.literal(text));
 	}
 
-	public List<BRPlayerData> getAlivePlayers() {
+	public List<BRPlayerData> getAliveDatas() {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
 	}
 
@@ -348,8 +347,8 @@ public class BRActive {
 	}
 
 	public void calcPlatformsAndPlots() {
-		var alivePlayers = getAlivePlayers();
-		int n = alivePlayers.size();
+		var aliveDatas = getAliveDatas();
+		int n = aliveDatas.size();
 
 		var platformSize = this.platform.getSize();
 		var plotOffset = this.config.map().plotOffset();
@@ -364,7 +363,7 @@ public class BRActive {
 		double thetaStep = 2 * Math.PI / n;
 
 		int index = 0;
-		for(var alivePlayer : alivePlayers) {
+		for(var aliveData : aliveDatas) {
 			double theta = index++ * thetaStep;
 
 			int x = MathHelper.floor(Math.cos(theta) * r);
@@ -381,34 +380,40 @@ public class BRActive {
 			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y - y1, z - z1);
 			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, y + y2, z + z2);
 
-			alivePlayer.platform = BlockBounds.of(minPos, maxPos);
+			aliveData.platform = BlockBounds.of(minPos, maxPos);
 
-			int xPlot = alivePlayer.platform.min().getX() + plotOffset.getX();
-			int yPlot = alivePlayer.platform.min().getY() + plotOffset.getY();
-			int zPlot = alivePlayer.platform.min().getZ() + plotOffset.getZ();
+			int xPlot = aliveData.platform.min().getX() + plotOffset.getX();
+			int yPlot = aliveData.platform.min().getY() + plotOffset.getY();
+			int zPlot = aliveData.platform.min().getZ() + plotOffset.getZ();
 			int size = plotSize - 1;
 
-			alivePlayer.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
+			aliveData.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
 		}
 	}
 
 	public void placeAlivePlayerPlatforms() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
-		for(var alivePlayer : alivePlayers) {
-			var platformPos = alivePlayer.platform.min();
+		for(var aliveData : aliveDatas) {
+			var platformPos = aliveData.platform.min();
 			this.platform.place(world, platformPos, platformPos, new StructurePlacementData(), this.world.getRandom(), 2);
+			BlockBounds barrier = BlockBounds.of(aliveData.plot.min().add(0, -2, 0), aliveData.plot.max().add(0, -2, 0));
+			barrier.forEach(pos -> {
+				if(world.getBlockState(pos).isAir()) {
+					world.setBlockState(pos, Blocks.BARRIER.getDefaultState());
+				}
+			});
 		}
 	}
 
 	public void placeAlivePlayerPlots() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
 		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
-		for(var alivePlayer : alivePlayers) {
-			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
-			var plotPos = alivePlayer.plot.min();
+		for(var aliveData : aliveDatas) {
+			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
+			var plotPos = aliveData.plot.min();
 			if(shouldPlacePlotGround) {
 				plotPos = plotPos.down();
 			}
@@ -427,19 +432,19 @@ public class BRActive {
 	}
 
 	public void placeAlivePlayerPlotGrounds() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
-		for(var alivePlayer : alivePlayers) {
-			var plotPos = alivePlayer.plot.min().down();
+		for(var aliveData : aliveDatas) {
+			var plotPos = aliveData.plot.min().down();
 			this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
 	}
 
 	public void removeAlivePlayerPlots() {
-		var alivePlayers = getAlivePlayers();
-		for(var alivePlayer : alivePlayers) {
-			var plot = alivePlayer.plot;
-			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
+		var aliveDatas = getAliveDatas();
+		for(var aliveData : aliveDatas) {
+			var plot = aliveData.plot;
+			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 			for(var pos : plot) {
 				this.removeBlock(pos);
 			}
