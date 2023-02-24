@@ -25,6 +25,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
@@ -309,8 +310,23 @@ public class BRActive {
 		var data = playerDataMap.get(player.getUuid());
 		boolean spectator = data == null || data.eliminated;
 
-		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(spectator ? center.center() : data.plot.center())).toCenterPos();
-		player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		if(spectator) {
+			var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(center.center())).toCenterPos();
+			player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		}
+		else {
+			Vec3d pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, -data.plot.size().getZ())).toCenterPos();
+			for(int i = 5; i > 0; i--) {
+				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, -i)));
+				if(newPos.getY() > world.getBottomY()) {
+					if(!world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
+						pos = newPos.toCenterPos();
+						break;
+					}
+				}
+			}
+			player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		}
 
 		player.setHealth(20.0f);
 		player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
@@ -397,6 +413,16 @@ public class BRActive {
 				plotPos = plotPos.down();
 			}
 			structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+		}
+
+		// if the player is inside a block, teleport them on top
+		for(var uuid : this.playerDataMap.keySet()) {
+			var player = this.world.getPlayerByUuid(uuid);
+			if(player instanceof ServerPlayerEntity serverPlayer) {
+				if(!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
+					this.resetPlayer(serverPlayer);
+				}
+			}
 		}
 	}
 
