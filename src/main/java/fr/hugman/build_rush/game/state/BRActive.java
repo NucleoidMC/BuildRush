@@ -21,11 +21,13 @@ import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
+import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameResult;
@@ -35,6 +37,8 @@ import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.block.BlockBreakEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
+import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
+import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 import java.util.ArrayList;
@@ -55,7 +59,7 @@ public class BRActive {
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private PlotStructure currentPlotStructure;
-	private List<ItemStack> inventory;
+	private final List<ItemStack> inventory;
 
 	private int tick;
 	private final BRRound round;
@@ -83,31 +87,38 @@ public class BRActive {
 
 	public GameResult transferActivity() {
 		this.space.setActivity(activity -> {
-			activity.allow(GameRuleType.INTERACTION);
+			activity.deny(GameRuleType.BREAK_BLOCKS);
+			activity.deny(GameRuleType.FIRE_TICK);
+
+			activity.deny(GameRuleType.PVP);
+			activity.deny(GameRuleType.HUNGER);
+			activity.deny(GameRuleType.FALL_DAMAGE);
 
 			activity.deny(GameRuleType.CRAFTING);
 			activity.deny(GameRuleType.PORTALS);
-			activity.deny(GameRuleType.PVP);
-			activity.deny(GameRuleType.BREAK_BLOCKS);
-			activity.deny(GameRuleType.HUNGER);
-			activity.deny(GameRuleType.FALL_DAMAGE);
 			activity.deny(GameRuleType.BLOCK_DROPS);
 			activity.deny(GameRuleType.THROW_ITEMS);
+			activity.deny(GameRuleType.PICKUP_ITEMS);
 
-			var active = new BRActive(config, space, world, center, centerPlot, platform, plotGround, plotStructures);
-
-			activity.listen(GameActivityEvents.ENABLE, active::enable);
-			activity.listen(GameActivityEvents.TICK, active::tick);
+			activity.listen(GameActivityEvents.ENABLE, this::enable);
+			activity.listen(GameActivityEvents.TICK, this::tick);
 
 			//activity.listen(GamePlayerEvents.OFFER, active::offerPlayer);
 
+			activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
+				if(source.isOutOfWorld()) {
+					this.resetPlayer(player);
+				}
+				return ActionResult.FAIL;
+			});
 			activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
 				this.resetPlayer(player);
 				return ActionResult.FAIL;
 			});
-			activity.listen(BlockPlaceEvent.BEFORE, active::placeBlock);
-			activity.listen(BlockPunchEvent.EVENT, active::punchBlock);
-			activity.listen(BlockBreakEvent.EVENT, active::breakBlock);
+			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
+			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
+			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
+			activity.listen(BlockBreakEvent.EVENT, this::breakBlock);
 		});
 
 		return GameResult.ok();
@@ -222,6 +233,15 @@ public class BRActive {
 		return ActionResult.FAIL;
 	}
 
+
+	private ActionResult placeFluid(ServerWorld world, BlockPos pos, @Nullable ServerPlayerEntity player, @Nullable BlockHitResult blockHitResult) {
+		if(player == null) {
+			return ActionResult.FAIL;
+		}
+		return placeBlock(player, world, pos, world.getBlockState(pos), null);
+
+	}
+
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
 		return breakBlock(player, this.world, pos);
 	}
@@ -280,8 +300,15 @@ public class BRActive {
 	}
 
 	public void resetPlayer(ServerPlayerEntity player) {
-		var data = playerDataMap.get(player.getUuid());
+		var data = playerDataMap.get(player.getUuid()); // This returns null sometimes (damage/death), why?
 		boolean spectator = data == null || data.eliminated;
+
+		for(var key : playerDataMap.keySet()) {
+			player.sendMessage(Text.literal("  " + key));
+		}
+		player.sendMessage(Text.literal(player.getUuid().toString()));
+		player.sendMessage(Text.literal("data null=" + (data == null)));
+		player.sendMessage(Text.literal("eliminated=" + (data != null && data.eliminated)));
 
 		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(spectator ? center.center() : data.plot.center())).toCenterPos();
 		player.teleport(pos.getX(), pos.getY(), pos.getZ());
@@ -317,8 +344,8 @@ public class BRActive {
 		int centerSizeY = this.center.max().getZ() - this.center.min().getZ();
 
 		// C = (sqrt((A/2)^2 + (B/2)^2) + X/2) / sin(pi/N)
-		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + (Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) + this.config.map().platformSpacing())/ Math.sin(Math.PI / n);
-		// i owe chat gpt a beer for this one ^
+		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + (Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) + this.config.map().platformSpacing()) / Math.sin(Math.PI / n);
+		// I owe chat gpt a beer for this one ^
 		double thetaStep = 2 * Math.PI / n;
 
 		int index = 0;

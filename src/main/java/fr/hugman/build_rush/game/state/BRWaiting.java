@@ -12,6 +12,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
@@ -39,7 +40,15 @@ public class BRWaiting {
 		try {
 			var template = MapTemplateSerializer.loadFromResource(context.server(), config.map().template());
 			var chunkGenerator = new TemplateChunkGenerator(context.server(), template);
-			var worldConfig = new RuntimeWorldConfig().setGenerator(chunkGenerator);
+			var worldConfig = new RuntimeWorldConfig().setGenerator(chunkGenerator)
+					.setGameRule(GameRules.DO_FIRE_TICK, false)
+					.setGameRule(GameRules.FIRE_DAMAGE, false)
+					.setGameRule(GameRules.FREEZE_DAMAGE, false)
+					.setGameRule(GameRules.DO_MOB_GRIEFING, false)
+					.setGameRule(GameRules.DO_MOB_SPAWNING, false)
+					.setGameRule(GameRules.RANDOM_TICK_SPEED, 0)
+					.setGameRule(GameRules.WATER_SOURCE_CONVERSION, false)
+					.setGameRule(GameRules.LAVA_SOURCE_CONVERSION, false);
 
 			var centerRegion = template.getMetadata().getFirstRegion("center");
 			if(centerRegion == null) {
