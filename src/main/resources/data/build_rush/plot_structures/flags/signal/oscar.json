@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:flags/signal/oscar",
+  "structure": "build_rush:plot/flags/signal/oscar",
   "name": {
     "translate": "plot_structure.flags.signal.oscar"
   },

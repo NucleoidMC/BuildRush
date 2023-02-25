@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:flags/signal/uniform",
+  "structure": "build_rush:plot/flags/signal/uniform",
   "name": {
     "translate": "plot_structure.flags.signal.uniform"
   },

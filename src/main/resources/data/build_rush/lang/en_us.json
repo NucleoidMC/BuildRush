@@ -69,6 +69,8 @@
   "plot_structure.flags.signal.zero": "Zero",
   "plot_structure.flags.signal.zulu": "Zulu",
 
+  "ui.build_rush.time": "%s:%s left",
+
   "error.build_rush.region.center.not_found": "Region 'center' not found",
   "error.build_rush.platform.not_found": "Platform structure '%s' is not available",
   "error.build_rush.plot_ground.not_found": "Plot ground structure '%s' is not available",
