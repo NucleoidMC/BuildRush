@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:pikachu",
+  "structure": "build_rush:plot/pikachu",
   "name": {
     "translate": "plot_structure.pikachu"
   },

@@ -21,20 +21,24 @@ import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
+import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
-import xyz.nucleoid.stimuli.event.block.BlockBreakEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
+import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
+import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
 import java.util.ArrayList;
@@ -55,7 +59,7 @@ public class BRActive {
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private PlotStructure currentPlotStructure;
-	private List<ItemStack> inventory;
+	private final List<ItemStack> inventory;
 
 	private int tick;
 	private final BRRound round;
@@ -83,31 +87,37 @@ public class BRActive {
 
 	public GameResult transferActivity() {
 		this.space.setActivity(activity -> {
-			activity.allow(GameRuleType.INTERACTION);
+			activity.deny(GameRuleType.BREAK_BLOCKS);
+			activity.deny(GameRuleType.FIRE_TICK);
+
+			activity.deny(GameRuleType.PVP);
+			activity.deny(GameRuleType.HUNGER);
+			activity.deny(GameRuleType.FALL_DAMAGE);
 
 			activity.deny(GameRuleType.CRAFTING);
 			activity.deny(GameRuleType.PORTALS);
-			activity.deny(GameRuleType.PVP);
-			activity.deny(GameRuleType.BREAK_BLOCKS);
-			activity.deny(GameRuleType.HUNGER);
-			activity.deny(GameRuleType.FALL_DAMAGE);
 			activity.deny(GameRuleType.BLOCK_DROPS);
 			activity.deny(GameRuleType.THROW_ITEMS);
+			activity.deny(GameRuleType.PICKUP_ITEMS);
 
-			var active = new BRActive(config, space, world, center, centerPlot, platform, plotGround, plotStructures);
-
-			activity.listen(GameActivityEvents.ENABLE, active::enable);
-			activity.listen(GameActivityEvents.TICK, active::tick);
+			activity.listen(GameActivityEvents.ENABLE, this::enable);
+			activity.listen(GameActivityEvents.TICK, this::tick);
 
 			//activity.listen(GamePlayerEvents.OFFER, active::offerPlayer);
 
+			activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
+				if(source.isOutOfWorld()) {
+					this.resetPlayer(player);
+				}
+				return ActionResult.FAIL;
+			});
 			activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
 				this.resetPlayer(player);
 				return ActionResult.FAIL;
 			});
-			activity.listen(BlockPlaceEvent.BEFORE, active::placeBlock);
-			activity.listen(BlockPunchEvent.EVENT, active::punchBlock);
-			activity.listen(BlockBreakEvent.EVENT, active::breakBlock);
+			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
+			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
+			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
 		});
 
 		return GameResult.ok();
@@ -136,6 +146,9 @@ public class BRActive {
 	public void tick() {
 		this.tick++;
 		this.round.tick();
+		for(var playerData : this.playerDataMap.values()) {
+			playerData.tick();
+		}
 		if(this.tick % 20 == 0) {
 			// update sidebar
 		}
@@ -222,17 +235,28 @@ public class BRActive {
 		return ActionResult.FAIL;
 	}
 
-	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-		return breakBlock(player, this.world, pos);
+
+	private ActionResult placeFluid(ServerWorld world, BlockPos pos, @Nullable ServerPlayerEntity player, @Nullable BlockHitResult blockHitResult) {
+		if(player == null) {
+			return ActionResult.FAIL;
+		}
+		return placeBlock(player, world, pos, world.getBlockState(pos), null);
+
 	}
 
-	private ActionResult breakBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos) {
-		//TODO: this doesn't trigger for blocks placed against other blocks (banners, torches, lanterns, etc...)
+	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
 		var data = this.playerDataMap.get(player.getUuid());
 		if(data == null || data.eliminated) {
 			return ActionResult.FAIL;
 		}
 		if(this.canBuild && data.plot.contains(pos)) {
+			/*
+			  This currently doesn't work very well, so I'm disabling it for now
+			  If you hold the click it won't break the second block if you're still holding the click
+			if(data.breakingCooldown > 0) {
+				return ActionResult.FAIL;
+			}
+			 */
 			var state = this.world.getBlockState(pos);
 			var center = pos.toCenterPos();
 
@@ -240,6 +264,8 @@ public class BRActive {
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+			data.breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
+			return ActionResult.SUCCESS;
 		}
 		return ActionResult.FAIL;
 	}
@@ -252,7 +278,7 @@ public class BRActive {
 		this.space.getPlayers().sendMessage(Text.literal(text));
 	}
 
-	public List<BRPlayerData> getAlivePlayers() {
+	public List<BRPlayerData> getAliveDatas() {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
 	}
 
@@ -260,10 +286,9 @@ public class BRActive {
 		if(this.plotStructures.isEmpty()) {
 			this.plotStructures.addAll(this.usedPlotStructures);
 			this.usedPlotStructures.clear();
-			BuildRush.debug("No plot structures left, filling the list with used plot structures again...");
 		}
 		if(this.plotStructures.isEmpty()) {
-			throw new GameOpenException(Text.literal("No plot structures available! HOW!?"));
+			throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.none.weird"));
 		}
 		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
 		this.plotStructures.remove(this.currentPlotStructure);
@@ -283,8 +308,23 @@ public class BRActive {
 		var data = playerDataMap.get(player.getUuid());
 		boolean spectator = data == null || data.eliminated;
 
-		var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(spectator ? center.center() : data.plot.center())).toCenterPos();
-		player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		if(spectator) {
+			var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(center.center())).toCenterPos();
+			player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		}
+		else {
+			Vec3d pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
+			for(int i = 5; i > 0; i--) {
+				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
+				if(newPos.getY() > world.getBottomY()) {
+					if(!world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
+						pos = newPos.toCenterPos();
+						break;
+					}
+				}
+			}
+			player.teleport(pos.getX(), pos.getY(), pos.getZ());
+		}
 
 		player.setHealth(20.0f);
 		player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
@@ -306,8 +346,8 @@ public class BRActive {
 	}
 
 	public void calcPlatformsAndPlots() {
-		var alivePlayers = getAlivePlayers();
-		int n = alivePlayers.size();
+		var aliveDatas = getAliveDatas();
+		int n = aliveDatas.size();
 
 		var platformSize = this.platform.getSize();
 		var plotOffset = this.config.map().plotOffset();
@@ -317,12 +357,12 @@ public class BRActive {
 		int centerSizeY = this.center.max().getZ() - this.center.min().getZ();
 
 		// C = (sqrt((A/2)^2 + (B/2)^2) + X/2) / sin(pi/N)
-		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + (Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) + this.config.map().platformSpacing())/ Math.sin(Math.PI / n);
-		// i owe chat gpt a beer for this one ^
+		double r = (Math.sqrt(Math.pow(centerSizeX / 2.0, 2) + Math.pow(centerSizeY / 2.0, 2)) + (Math.max(platformSize.getX(), platformSize.getZ()) / 2.0) + this.config.map().platformSpacing()) / Math.sin(Math.PI / n);
+		// I owe chat gpt a beer for this one ^
 		double thetaStep = 2 * Math.PI / n;
 
 		int index = 0;
-		for(var alivePlayer : alivePlayers) {
+		for(var aliveData : aliveDatas) {
 			double theta = index++ * thetaStep;
 
 			int x = MathHelper.floor(Math.cos(theta) * r);
@@ -339,55 +379,71 @@ public class BRActive {
 			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y - y1, z - z1);
 			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, y + y2, z + z2);
 
-			alivePlayer.platform = BlockBounds.of(minPos, maxPos);
+			aliveData.platform = BlockBounds.of(minPos, maxPos);
 
-			int xPlot = alivePlayer.platform.min().getX() + plotOffset.getX();
-			int yPlot = alivePlayer.platform.min().getY() + plotOffset.getY();
-			int zPlot = alivePlayer.platform.min().getZ() + plotOffset.getZ();
+			int xPlot = aliveData.platform.min().getX() + plotOffset.getX();
+			int yPlot = aliveData.platform.min().getY() + plotOffset.getY();
+			int zPlot = aliveData.platform.min().getZ() + plotOffset.getZ();
 			int size = plotSize - 1;
 
-			alivePlayer.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
+			aliveData.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
 		}
 	}
 
 	public void placeAlivePlayerPlatforms() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
-		for(var alivePlayer : alivePlayers) {
-			var platformPos = alivePlayer.platform.min();
+		for(var aliveData : aliveDatas) {
+			var platformPos = aliveData.platform.min();
 			this.platform.place(world, platformPos, platformPos, new StructurePlacementData(), this.world.getRandom(), 2);
+			BlockBounds barrier = BlockBounds.of(aliveData.plot.min().add(0, -2, 0), aliveData.plot.max().add(0, -2, 0));
+			barrier.forEach(pos -> {
+				if(world.getBlockState(pos).isAir()) {
+					world.setBlockState(pos, Blocks.BARRIER.getDefaultState());
+				}
+			});
 		}
 	}
 
 	public void placeAlivePlayerPlots() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
 		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
-		for(var alivePlayer : alivePlayers) {
-			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
-			var plotPos = alivePlayer.plot.min();
+		for(var aliveData : aliveDatas) {
+			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
+			var plotPos = aliveData.plot.min();
 			if(shouldPlacePlotGround) {
 				plotPos = plotPos.down();
 			}
 			structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
+
+		// if the player is inside a block, teleport them on top
+		for(var uuid : this.playerDataMap.keySet()) {
+			var player = this.world.getPlayerByUuid(uuid);
+			if(player instanceof ServerPlayerEntity serverPlayer) {
+				if(!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
+					this.resetPlayer(serverPlayer);
+				}
+			}
+		}
 	}
 
 	public void placeAlivePlayerPlotGrounds() {
-		var alivePlayers = getAlivePlayers();
+		var aliveDatas = getAliveDatas();
 
-		for(var alivePlayer : alivePlayers) {
-			var plotPos = alivePlayer.plot.min().down();
+		for(var aliveData : aliveDatas) {
+			var plotPos = aliveData.plot.min().down();
 			this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		}
 	}
 
 	public void removeAlivePlayerPlots() {
-		var alivePlayers = getAlivePlayers();
-		for(var alivePlayer : alivePlayers) {
-			var plot = alivePlayer.plot;
-			this.world.playSound(null, new BlockPos(alivePlayer.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
+		var aliveDatas = getAliveDatas();
+		for(var aliveData : aliveDatas) {
+			var plot = aliveData.plot;
+			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 			for(var pos : plot) {
 				this.removeBlock(pos);
 			}

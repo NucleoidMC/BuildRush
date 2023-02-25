@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:tnt",
+  "structure": "build_rush:plot/tnt",
   "name": {
     "translate": "plot_structure.tnt"
   },

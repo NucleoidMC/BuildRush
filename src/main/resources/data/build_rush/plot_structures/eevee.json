@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:eevee",
+  "structure": "build_rush:plot/eevee",
   "name": {
     "translate": "plot_structure.eevee"
   },

@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:logs",
+  "structure": "build_rush:plot/logs",
   "name": {
     "translate": "plot_structure.logs"
   },

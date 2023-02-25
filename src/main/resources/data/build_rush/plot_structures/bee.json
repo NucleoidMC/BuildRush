@@ -1,5 +1,5 @@
 {
-  "id": "build_rush:bee",
+  "structure": "build_rush:plot/bee",
   "name": {
     "translate": "plot_structure.bee"
   },
