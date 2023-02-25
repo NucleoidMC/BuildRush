@@ -132,7 +132,7 @@ public class BRWaiting {
 			}
 
 			// Verify that the structure is here and is of the correct size
-			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", plot.toString())));
+			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", plotStructure.toString())));
 			if(structure.getSize().getX() != plotSize ||
 					structure.getSize().getZ() != plotSize ||
 					structure.getSize().getY() < plotSize || structure.getSize().getY() > plotSize + 1) {
