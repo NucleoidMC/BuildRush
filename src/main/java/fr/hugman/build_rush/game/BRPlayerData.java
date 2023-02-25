@@ -30,4 +30,8 @@ public class BRPlayerData {
 	public void join(ServerPlayerEntity player) {
 		this.bar.addPlayer(player);
 	}
+
+	public void leave(ServerPlayerEntity player) {
+		this.bar.removePlayer(player);
+	}
 }

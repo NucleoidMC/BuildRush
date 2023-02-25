@@ -34,10 +34,12 @@ import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
+import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameResult;
 import xyz.nucleoid.plasmid.game.GameSpace;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
@@ -107,8 +109,10 @@ public class BRActive {
 
 			activity.listen(GameActivityEvents.ENABLE, this::enable);
 			activity.listen(GameActivityEvents.TICK, this::tick);
+			activity.listen(GameActivityEvents.DESTROY, this::close);
 
-			//activity.listen(GamePlayerEvents.OFFER, active::offerPlayer);
+			activity.listen(GamePlayerEvents.ADD, this::addPlayer);
+			activity.listen(GamePlayerEvents.REMOVE, this::removePlayer);
 
 			activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
 				if(source.isOutOfWorld()) {
@@ -192,6 +196,8 @@ public class BRActive {
 					}
 					else {
 						playerData.bar.setColor(BossBar.Color.RED);
+						//show title
+
 						//TODO: show title
 						//TODO: play sound
 					}
@@ -200,6 +206,17 @@ public class BRActive {
 		}
 		if(this.tick % 20 == 0) {
 			this.refreshSidebar();
+		}
+	}
+
+	private void close(GameCloseReason gameCloseReason) {
+		this.globalSidebar.hide();
+		for (var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
+			if(data != null) {
+				data.leave(player);
+			}
+			this.globalSidebar.removePlayer(player);
 		}
 	}
 
@@ -316,6 +333,20 @@ public class BRActive {
 		return ActionResult.FAIL;
 	}
 
+	private void addPlayer(ServerPlayerEntity player) {
+		this.globalSidebar.addPlayer(player);
+		this.resetPlayer(player);
+	}
+
+	private void removePlayer(ServerPlayerEntity player) {
+		var data = this.playerDataMap.remove(player.getUuid());
+		if(data != null) {
+			data.leave(player);
+		}
+		this.globalSidebar.removePlayer(player);
+		this.refreshSidebar();
+	}
+
 	/*===========*/
 	/*  UTILITY  */
 	/*===========*/
@@ -418,7 +449,7 @@ public class BRActive {
 		int n = aliveDatas.size();
 
 		var platformSize = this.platform.getSize();
-		var plotOffset = this.config.map().plotOffset();
+		var plotOffset = this.config.map().platformPlotOffset();
 		var plotSize = this.plotGround.getSize().getX();
 
 		int centerSizeX = this.center.max().getX() - this.center.min().getX();
@@ -434,18 +465,16 @@ public class BRActive {
 			double theta = index++ * thetaStep;
 
 			int x = MathHelper.floor(Math.cos(theta) * r);
-			int y = center.max().getY() + platformSize.getY() - this.config.map().plotOffset().getY();
+			int y = this.centerPlot.min().getY() - plotOffset.getY(); // TODO: add an offset to the config 
 			int z = MathHelper.floor(Math.sin(theta) * r);
 
 			int x1 = MathHelper.floor(platformSize.getX() / 2.0);
-			int y1 = MathHelper.floor(platformSize.getY() / 2.0);
 			int z1 = MathHelper.floor(platformSize.getZ() / 2.0);
 			int x2 = platformSize.getX() - x1 - 1;
-			int y2 = platformSize.getY() - y1 - 1;
 			int z2 = platformSize.getZ() - z1 - 1;
 
-			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y - y1, z - z1);
-			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, y + y2, z + z2);
+			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y, z - z1);
+			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, platformSize.getY(), z + z2);
 
 			aliveData.platform = BlockBounds.of(minPos, maxPos);
 
@@ -497,6 +526,9 @@ public class BRActive {
 
 		// if the player is inside a block, teleport them on top
 		for(var uuid : this.playerDataMap.keySet()) {
+			if(!this.space.getPlayers().contains(uuid)) {
+				continue;
+			}
 			var player = this.world.getPlayerByUuid(uuid);
 			if(player instanceof ServerPlayerEntity serverPlayer) {
 				if(!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {

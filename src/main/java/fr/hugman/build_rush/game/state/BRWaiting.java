@@ -83,12 +83,7 @@ public class BRWaiting {
 					return ActionResult.FAIL;
 				});
 
-				activity.listen(GamePlayerEvents.OFFER, offer -> {
-					var accept = offer.accept(world, centerBounds.center().withAxis(Direction.Axis.Y, world.getTopY()));
-					resetPlayer(offer.player(), world, spawnPos);
-					return accept;
-				});
-
+				activity.listen(GamePlayerEvents.OFFER, offer -> offer.accept(world, centerBounds.center().withAxis(Direction.Axis.Y, world.getTopY())).and(() -> resetPlayer(offer.player(), world, spawnPos)));
 
 				activity.listen(GameActivityEvents.REQUEST_START, () -> {
 					var active = new BRActive(config, activity.getGameSpace(), world, centerBounds, centerPlot, platform, plotGround, plotStructures);
@@ -112,6 +107,8 @@ public class BRWaiting {
 
 	public static BlockBounds getCenterPlot(TemplateRegion centerRegion, BlockPos offset, int size) {
 		var min = centerRegion.getBounds().min();
+
+		size--;
 
 		var x = min.getX() + offset.getX();
 		var y = min.getY() + offset.getY();
