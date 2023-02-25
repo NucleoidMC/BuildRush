@@ -1,5 +1,6 @@
 package fr.hugman.build_rush.game.state;
 
+import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.game.BRPlayerData;
@@ -8,6 +9,7 @@ import fr.hugman.build_rush.plot.PlotStructure;
 import fr.hugman.build_rush.plot.PlotUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
@@ -63,6 +65,7 @@ public class BRActive {
 
 	private int tick;
 	private final BRRound round;
+	public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 	private boolean canBuild;
 
 	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<PlotStructure> plotStructures) {
@@ -129,7 +132,9 @@ public class BRActive {
 
 	public void enable() {
 		for(var player : this.space.getPlayers()) {
-			this.playerDataMap.put(player.getUuid(), new BRPlayerData());
+			var data = new BRPlayerData();
+			this.playerDataMap.put(player.getUuid(), data);
+			data.join(player);
 		}
 		if(BuildRush.DEBUG) {
 			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
@@ -146,11 +151,50 @@ public class BRActive {
 	public void tick() {
 		this.tick++;
 		this.round.tick();
+
+		var showCountdown = this.round.getState() == BRRound.BUILD || this.round.getState() == BRRound.MEMORIZE;
+		var stateTick = this.round.getStateTick();
+		var stateTotalTicks = this.round.getLength(this.round.getState());
+		var statePercent = (float) stateTick / stateTotalTicks;
+
+		var minutes = (stateTotalTicks - stateTick) / 20 / 60;
+		var seconds = (stateTotalTicks - stateTick) / 20 % 60;
+
+		// TODO: if build finished, then show a finished bar (green + different text)
+
 		for(var playerData : this.playerDataMap.values()) {
 			playerData.tick();
+
+			if(showCountdown) {
+				if(!playerData.bar.isVisible()) {
+					playerData.bar.setVisible(true);
+					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
+				}
+				playerData.bar.setPercent(statePercent);
+			}
+			else {
+				if(playerData.bar.isVisible()) {
+					playerData.bar.setVisible(false);
+					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
+				}
+			}
+
+			if(this.tick % 20 == 0) {
+				if(showCountdown) {
+					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
+					if(seconds > 5) {
+						playerData.bar.setColor(BossBar.Color.YELLOW);
+					}
+					else {
+						playerData.bar.setColor(BossBar.Color.RED);
+						//TODO: show title
+						//TODO: play sound
+					}
+				}
+			}
 		}
 		if(this.tick % 20 == 0) {
-			// update sidebar
+			// TODO: sidebar update
 		}
 	}
 
@@ -160,14 +204,6 @@ public class BRActive {
 
 	public void eliminateLastPlayer() {
 		//TODO
-	}
-
-	public void calcInventory() {
-		this.inventory.clear();
-		for(var pos : this.centerPlot) {
-			var stack = PlotUtil.stackForBlock(world, pos);
-			this.inventory.add(stack);
-		}
 	}
 
 	public void giveInventory() {
@@ -308,12 +344,12 @@ public class BRActive {
 		var data = playerDataMap.get(player.getUuid());
 		boolean spectator = data == null || data.eliminated;
 
+		Vec3d pos;
 		if(spectator) {
-			var pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(center.center())).toCenterPos();
-			player.teleport(pos.getX(), pos.getY(), pos.getZ());
+			pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(center.center())).toCenterPos();
 		}
 		else {
-			Vec3d pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
+			pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
 			for(int i = 5; i > 0; i--) {
 				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
 				if(world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
@@ -321,8 +357,8 @@ public class BRActive {
 					break;
 				}
 			}
-			player.teleport(pos.getX(), pos.getY(), pos.getZ());
 		}
+		player.teleport(pos.getX(), pos.getY(), pos.getZ());
 
 		player.setHealth(20.0f);
 		player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
@@ -385,6 +421,14 @@ public class BRActive {
 			int size = plotSize - 1;
 
 			aliveData.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
+		}
+	}
+
+	public void calcInventory() {
+		this.inventory.clear();
+		for(var pos : this.centerPlot) {
+			var stack = PlotUtil.stackForBlock(world, pos);
+			this.inventory.add(stack);
 		}
 	}
 

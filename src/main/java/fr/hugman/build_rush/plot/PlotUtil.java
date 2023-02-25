@@ -30,7 +30,7 @@ public class PlotUtil {
 		if(state.getFluidState().getFluid() == Fluids.LAVA) {
 			stack = new ItemStack(Items.LAVA_BUCKET);
 		}
-		// TODO: verify for vines and sculk veins
+		// TODO: verify for vines, sculk veins, candles...
 
 		if(state.hasBlockEntity()) {
 			var blockEntity = world.getBlockEntity(pos);

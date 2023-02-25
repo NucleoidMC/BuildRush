@@ -14,14 +14,15 @@ public class BRRound {
 
 	private final BRActive active;
 	private int number;
-	private int tick;
+	private int roundTick;
+	private int stateTick;
 	private int state;
 	private final int[] lenghts;
 
 	public BRRound(BRActive active, int memorizeTime, int buildTime) {
 		this.active = active;
 		this.number = 1;
-		this.tick = 0;
+		this.stateTick = 0;
 		this.state = -1;
 		this.lenghts = new int[]{2, memorizeTime, buildTime, 3, 2, 3, 3};
 		for(int i = 0; i < this.lenghts.length; i++) {
@@ -37,13 +38,27 @@ public class BRRound {
 		return this.state;
 	}
 
-	public int tick() {
-		this.tick++;
-		if(this.state == -1 || this.tick >= this.lenghts[this.state]) {
-			this.tick = 0;
+	public int getRoundTick() {
+		return roundTick;
+	}
+
+	public int getStateTick() {
+		return stateTick;
+	}
+
+	public int getLength(int state) {
+		return this.lenghts[state];
+	}
+
+	public void tick() {
+		this.roundTick++;
+		this.stateTick++;
+		if(this.state == -1 || this.stateTick >= this.lenghts[this.state]) {
+			this.stateTick = 0;
 			this.state++;
 			if(this.state >= lenghts.length) {
 				// Next Round
+				this.roundTick = 0;
 				this.state = 0;
 				this.number++;
 			}
@@ -94,6 +109,5 @@ public class BRRound {
 				}
 			}
 		}
-		return this.tick;
 	}
 }
