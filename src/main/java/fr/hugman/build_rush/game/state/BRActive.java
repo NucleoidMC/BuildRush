@@ -449,7 +449,7 @@ public class BRActive {
 		int n = aliveDatas.size();
 
 		var platformSize = this.platform.getSize();
-		var plotOffset = this.config.map().platformPlotOffset();
+		var platformPlotOffset = this.config.map().platformPlotOffset();
 		var plotSize = this.plotGround.getSize().getX();
 
 		int centerSizeX = this.center.max().getX() - this.center.min().getX();
@@ -465,7 +465,7 @@ public class BRActive {
 			double theta = index++ * thetaStep;
 
 			int x = MathHelper.floor(Math.cos(theta) * r);
-			int y = this.centerPlot.min().getY() - plotOffset.getY(); // TODO: add an offset to the config 
+			int y = this.centerPlot.min().getY() - platformPlotOffset.getY(); // TODO: add an offset to the config
 			int z = MathHelper.floor(Math.sin(theta) * r);
 
 			int x1 = MathHelper.floor(platformSize.getX() / 2.0);
@@ -473,14 +473,14 @@ public class BRActive {
 			int x2 = platformSize.getX() - x1 - 1;
 			int z2 = platformSize.getZ() - z1 - 1;
 
-			BlockPos.Mutable minPos = new BlockPos.Mutable(x - x1, y, z - z1);
-			BlockPos.Mutable maxPos = new BlockPos.Mutable(x + x2, platformSize.getY(), z + z2);
+			BlockPos minPos = new BlockPos(x - x1, y, z - z1);
+			BlockPos maxPos = new BlockPos(x + x2, y + platformSize.getY(), z + z2);
 
 			aliveData.platform = BlockBounds.of(minPos, maxPos);
 
-			int xPlot = aliveData.platform.min().getX() + plotOffset.getX();
-			int yPlot = aliveData.platform.min().getY() + plotOffset.getY();
-			int zPlot = aliveData.platform.min().getZ() + plotOffset.getZ();
+			int xPlot = aliveData.platform.min().getX() + platformPlotOffset.getX();
+			int yPlot = aliveData.platform.min().getY() + platformPlotOffset.getY();
+			int zPlot = aliveData.platform.min().getZ() + platformPlotOffset.getZ();
 			int size = plotSize - 1;
 
 			aliveData.plot = BlockBounds.of(xPlot, yPlot, zPlot, xPlot + size, yPlot + size, zPlot + size);
