@@ -316,11 +316,9 @@ public class BRActive {
 			Vec3d pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
 			for(int i = 5; i > 0; i--) {
 				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
-				if(newPos.getY() > world.getBottomY()) {
-					if(!world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
-						pos = newPos.toCenterPos();
-						break;
-					}
+				if(world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
+					pos = newPos.toCenterPos();
+					break;
 				}
 			}
 			player.teleport(pos.getX(), pos.getY(), pos.getZ());
