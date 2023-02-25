@@ -1,5 +1,5 @@
 {
-  "type": "build_rush:normal",
+  "type": "build_rush:standard",
   "name": {
     "translate": "map.build_rush.test"
   },

@@ -21,8 +21,10 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -83,7 +85,7 @@ public class BRActive {
 		this.currentPlotStructure = null;
 		this.inventory = new ArrayList<>();
 
-		this.round = new BRRound(this, 20, 60);
+		this.round = new BRRound(this, 10, 40);
 		this.tick = 0;
 		this.canBuild = false;
 	}
@@ -140,11 +142,14 @@ public class BRActive {
 			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
 			this.playerDataMap.put(UUID.randomUUID(), new BRPlayerData());
 		}
+		this.refreshSidebar();
+		this.globalSidebar.show();
 		this.calcPlatformsAndPlots();
 		this.placeAlivePlayerPlatforms();
 
 		for(var player : this.space.getPlayers()) {
 			this.resetPlayer(player);
+			this.globalSidebar.addPlayer(player);
 		}
 	}
 
@@ -157,8 +162,8 @@ public class BRActive {
 		var stateTotalTicks = this.round.getLength(this.round.getState());
 		var statePercent = (float) stateTick / stateTotalTicks;
 
-		var minutes = (stateTotalTicks - stateTick) / 20 / 60;
-		var seconds = (stateTotalTicks - stateTick) / 20 % 60;
+		var stateMinutes = (stateTotalTicks - stateTick) / 20 / 60;
+		var stateSeconds = (stateTotalTicks - stateTick) / 20 % 60;
 
 		// TODO: if build finished, then show a finished bar (green + different text)
 
@@ -168,21 +173,21 @@ public class BRActive {
 			if(showCountdown) {
 				if(!playerData.bar.isVisible()) {
 					playerData.bar.setVisible(true);
-					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
+					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 				}
 				playerData.bar.setPercent(statePercent);
 			}
 			else {
 				if(playerData.bar.isVisible()) {
 					playerData.bar.setVisible(false);
-					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
+					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 				}
 			}
 
-			if(this.tick % 20 == 0) {
+			if(stateTick % 20 == 0) {
 				if(showCountdown) {
-					playerData.bar.setName(Text.translatable("bar.build_rush.time", String.format("%d", minutes), String.format("%02d", seconds)));
-					if(seconds > 5) {
+					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
+					if(stateSeconds > 5) {
 						playerData.bar.setColor(BossBar.Color.YELLOW);
 					}
 					else {
@@ -194,7 +199,7 @@ public class BRActive {
 			}
 		}
 		if(this.tick % 20 == 0) {
-			// TODO: sidebar update
+			this.refreshSidebar();
 		}
 	}
 
@@ -204,6 +209,11 @@ public class BRActive {
 
 	public void eliminateLastPlayer() {
 		//TODO
+	}
+
+	public void eliminatePlayer(UUID uuid) {
+		this.playerDataMap.get(uuid).eliminated = true;
+		this.refreshSidebar();
 	}
 
 	public void giveInventory() {
@@ -314,6 +324,29 @@ public class BRActive {
 		this.space.getPlayers().sendMessage(Text.literal(text));
 	}
 
+	public void refreshSidebar() {
+		this.globalSidebar.setTitle(Text.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true)));
+
+		this.globalSidebar.set(b -> {
+			b.add(Text.translatable("sidebar.build_rush.round", this.round.getNumber()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
+			b.add(Text.empty());
+
+			if(this.currentPlotStructure != null) {
+				b.add(Text.translatable("sidebar.build_rush.build").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
+				b.add(this.currentPlotStructure.name().copy().setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
+				this.currentPlotStructure.author().ifPresent(author -> b.add((Text.literal("- ").append(Text.translatable("sidebar.build_rush.author", author.name()))).setStyle(Style.EMPTY.withColor(Formatting.GRAY))));
+				b.add(Text.empty());
+			}
+
+			b.add(Text.translatable("sidebar.build_rush.players_left", this.getAliveDatas().size()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
+			b.add(Text.empty());
+
+			var minutes = tick / 20 / 60;
+			var seconds = tick / 20 % 60;
+			b.add(Text.translatable("sidebar.build_rush.time", String.format("%02d", minutes), String.format("%02d", seconds)).setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
+		});
+	}
+
 	public List<BRPlayerData> getAliveDatas() {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
 	}
@@ -329,6 +362,7 @@ public class BRActive {
 		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
 		this.plotStructures.remove(this.currentPlotStructure);
 		this.usedPlotStructures.add(this.currentPlotStructure);
+		this.refreshSidebar();
 	}
 
 	public void resetAlivePlayers() {

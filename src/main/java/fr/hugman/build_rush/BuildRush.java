@@ -17,7 +17,7 @@ public class BuildRush implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		BRRegistries.register();
-		GameType.register(BuildRush.id("normal"), BRConfig.CODEC, BRWaiting::open);
+		GameType.register(BuildRush.id("standard"), BRConfig.CODEC, BRWaiting::open);
 	}
 
 	public static Identifier id(String s) {
