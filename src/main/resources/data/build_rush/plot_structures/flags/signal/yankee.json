@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/yankee",
   "name": {
-    "translate": "plot_structure.flags.signal.Yankee"
+    "translate": "plot_structure.flags.signal.yankee"
   },
   "author": {
     "name": "Komerish",

@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/delta",
   "name": {
-    "translate": "plot_structure.flags.signal.Delta"
+    "translate": "plot_structure.flags.signal.delta"
   },
   "author": {
     "name": "Komerish",

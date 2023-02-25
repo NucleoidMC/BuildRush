@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/answer",
   "name": {
-    "translate": "plot_structure.flags.signal.Answer"
+    "translate": "plot_structure.flags.signal.answer"
   },
   "author": {
     "name": "Komerish",

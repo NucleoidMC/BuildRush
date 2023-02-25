@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/golf",
   "name": {
-    "translate": "plot_structure.flags.signal.Golf"
+    "translate": "plot_structure.flags.signal.golf"
   },
   "author": {
     "name": "Komerish",

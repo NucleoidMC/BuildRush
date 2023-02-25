@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/foxtrot",
   "name": {
-    "translate": "plot_structure.flags.signal.Foxtrot"
+    "translate": "plot_structure.flags.signal.foxtrot"
   },
   "author": {
     "name": "Komerish",

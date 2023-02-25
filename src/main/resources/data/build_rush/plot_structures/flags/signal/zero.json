@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/zero",
   "name": {
-    "translate": "plot_structure.flags.signal.Zero"
+    "translate": "plot_structure.flags.signal.zero"
   },
   "author": {
     "name": "Komerish",

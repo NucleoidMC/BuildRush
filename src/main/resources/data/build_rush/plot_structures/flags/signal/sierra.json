@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/sierra",
   "name": {
-    "translate": "plot_structure.flags.signal.Sierra"
+    "translate": "plot_structure.flags.signal.sierra"
   },
   "author": {
     "name": "Komerish",

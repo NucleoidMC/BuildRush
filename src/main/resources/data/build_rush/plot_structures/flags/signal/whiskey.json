@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/whiskey",
   "name": {
-    "translate": "plot_structure.flags.signal.Whiskey"
+    "translate": "plot_structure.flags.signal.whiskey"
   },
   "author": {
     "name": "Komerish",

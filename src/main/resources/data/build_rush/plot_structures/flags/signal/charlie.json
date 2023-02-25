@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/charlie",
   "name": {
-    "translate": "plot_structure.flags.signal.Charlie"
+    "translate": "plot_structure.flags.signal.charlie"
   },
   "author": {
     "name": "Komerish",

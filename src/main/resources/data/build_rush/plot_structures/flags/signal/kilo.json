@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/kilo",
   "name": {
-    "translate": "plot_structure.flags.signal.Kilo"
+    "translate": "plot_structure.flags.signal.kilo"
   },
   "author": {
     "name": "Komerish",

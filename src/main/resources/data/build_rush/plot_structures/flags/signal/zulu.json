@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/zulu",
   "name": {
-    "translate": "plot_structure.flags.signal.Zulu"
+    "translate": "plot_structure.flags.signal.zulu"
   },
   "author": {
     "name": "Komerish",

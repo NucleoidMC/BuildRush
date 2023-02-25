@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/three",
   "name": {
-    "translate": "plot_structure.flags.signal.Three"
+    "translate": "plot_structure.flags.signal.three"
   },
   "author": {
     "name": "Komerish",

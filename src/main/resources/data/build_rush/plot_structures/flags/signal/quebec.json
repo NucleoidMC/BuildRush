@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/quebec",
   "name": {
-    "translate": "plot_structure.flags.signal.Quebec"
+    "translate": "plot_structure.flags.signal.quebec"
   },
   "author": {
     "name": "Komerish",

@@ -1,7 +1,7 @@
 {
   "type": "build_rush:normal",
   "name": {
-    "translate": "map.build_rush.flags.Signal Flags"
+    "translate": "map.build_rush.flags.signal_flags"
   },
   "icon": "minecraft:blue_wool",
   "players": {

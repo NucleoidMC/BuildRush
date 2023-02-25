@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/oscar",
   "name": {
-    "translate": "plot_structure.flags.signal.Oscar"
+    "translate": "plot_structure.flags.signal.oscar"
   },
   "author": {
     "name": "Komerish",

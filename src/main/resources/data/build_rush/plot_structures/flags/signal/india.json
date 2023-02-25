@@ -1,7 +1,7 @@
 {
-  "structure": "build_rush:flags/signal/india",
+  "structure": "build_rush:flags/signal/hotel",
   "name": {
-    "translate": "plot_structure.flags.signal.India"
+    "translate": "plot_structure.flags.signal.hotel"
   },
   "author": {
     "name": "Komerish",

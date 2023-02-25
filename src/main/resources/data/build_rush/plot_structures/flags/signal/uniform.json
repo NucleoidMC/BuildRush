@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/uniform",
   "name": {
-    "translate": "plot_structure.flags.signal.Uniform"
+    "translate": "plot_structure.flags.signal.uniform"
   },
   "author": {
     "name": "Komerish",

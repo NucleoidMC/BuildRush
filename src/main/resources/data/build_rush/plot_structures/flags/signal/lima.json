@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:flags/signal/lima",
   "name": {
-    "translate": "plot_structure.flags.signal.Lima"
+    "translate": "plot_structure.flags.signal.lima"
   },
   "author": {
     "name": "Komerish",
