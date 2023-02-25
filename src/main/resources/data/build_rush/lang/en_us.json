@@ -67,7 +67,7 @@
   "plot_structure.flags.signal.xray": "Xray",
   "plot_structure.flags.signal.yankee": "Yankee",
   "plot_structure.flags.signal.zero": "Zero",
-  "plot_structure.flags.signal.zulu": "Zulu"
+  "plot_structure.flags.signal.zulu": "Zulu",
 
   "error.build_rush.region.center.not_found": "Region 'center' not found",
   "error.build_rush.platform.not_found": "Platform structure '%s' is not available",
