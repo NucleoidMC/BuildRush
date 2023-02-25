@@ -10,7 +10,7 @@ For more information, see [our website](https://nucleoid.xyz).
 
 ## Credits
 
-- [Mineplex](www.mineplex.com) - Original minigame
+- [Mineplex](https://www.mineplex.com) - Original minigame
 - [Napero](https://github.com/Napero) - Idea of porting to Nucleoid
 - [Hugman](https://github.com/Hugman76) - Development
 
