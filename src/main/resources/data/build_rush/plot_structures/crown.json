@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/crown",
+  "name": {
+    "translate": "plot_structure.crown"
+  },
+  "author": {
+    "name": "Napero",
+    "uuid": "0529de78-7795-4382-ba3c-350fe3159cc3"
+  }
+}

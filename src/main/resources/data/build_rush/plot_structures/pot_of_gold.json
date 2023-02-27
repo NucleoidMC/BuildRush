@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/pot_of_gold",
+  "name": {
+    "translate": "plot_structure.pot_of_gold"
+  },
+  "author": {
+    "name": "Napero",
+    "uuid": "0529de78-7795-4382-ba3c-350fe3159cc3"
+  }
+}
