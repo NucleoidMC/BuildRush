@@ -74,6 +74,7 @@ public class BRRound {
 					this.active.resetAlivePlayers();
 					this.active.pickPlotStructure();
 					this.active.placeCenterPlot();
+					this.active.resetScores();
 				}
 				case MEMORIZE -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("memorize");
@@ -98,10 +99,12 @@ public class BRRound {
 					if(BuildRush.DEBUG) this.active.sendMessage("elimination_start");
 					// In OG game the elder guardian would start spinning here
 					this.active.placeCenterPlot();
+					this.active.calcPlayerScores();
+					this.active.sendScores();
 				}
 				case ELIMINATION -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("elimination");
-					this.active.eliminateLastPlayer();
+					this.active.eliminateLast();
 				}
 				case END -> {
 					if(BuildRush.DEBUG) this.active.sendMessage("end");

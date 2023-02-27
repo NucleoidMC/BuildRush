@@ -114,6 +114,12 @@
   "plot_structure.flags.signal.zero": "Zero",
   "plot_structure.flags.signal.zulu": "Zulu",
 
+  "text.build_rush.eliminated": "%s was eliminated!",
+  "text.build_rush.score": "You got a %s percent correct build!",
+  "text.build_rush.no_elimination": "Congratulations! Nobody was eliminated!",
+  "text.build_rush.win": "%s won after %d rounds!",
+  "text.build_rush.win.unknown": "Someone won after %d rounds... But we don't know who? (please contact the game author)",
+
   "sidebar.build_rush.build": "Build",
   "sidebar.build_rush.round": "Round %d",
   "sidebar.build_rush.players_left": "%d players left",

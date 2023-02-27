@@ -14,6 +14,7 @@ public class BRPlayerData {
 	public BlockBounds plot;
 	public boolean eliminated = false;
 	public int breakingCooldown = 0;
+	public int score = 0;
 
 	public final ServerBossBar bar;
 

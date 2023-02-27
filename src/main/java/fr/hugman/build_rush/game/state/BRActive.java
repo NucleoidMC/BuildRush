@@ -7,6 +7,7 @@ import fr.hugman.build_rush.game.BRPlayerData;
 import fr.hugman.build_rush.game.BRRound;
 import fr.hugman.build_rush.plot.PlotStructure;
 import fr.hugman.build_rush.plot.PlotUtil;
+import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.boss.BossBar;
@@ -66,6 +67,7 @@ public class BRActive {
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
 	private PlotStructure currentPlotStructure;
 	private final List<ItemStack> inventory;
+	private int maxScore;
 
 	private int tick;
 	private final BRRound round;
@@ -109,7 +111,7 @@ public class BRActive {
 
 			activity.listen(GameActivityEvents.ENABLE, this::enable);
 			activity.listen(GameActivityEvents.TICK, this::tick);
-			activity.listen(GameActivityEvents.DESTROY, this::close);
+			activity.listen(GameActivityEvents.DESTROY, this::onClose);
 
 			activity.listen(GamePlayerEvents.ADD, this::addPlayer);
 			activity.listen(GamePlayerEvents.REMOVE, this::removePlayer);
@@ -209,7 +211,7 @@ public class BRActive {
 		}
 	}
 
-	private void close(GameCloseReason gameCloseReason) {
+	private void onClose(GameCloseReason gameCloseReason) {
 		this.globalSidebar.hide();
 		for (var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
@@ -224,13 +226,88 @@ public class BRActive {
 		this.canBuild = canBuild;
 	}
 
-	public void eliminateLastPlayer() {
-		//TODO
+	public void eliminateLast() {
+		int fewestScore = Integer.MAX_VALUE;
+		UUID uuid = null;
+		for(var u : this.playerDataMap.keySet()) {
+			var d = this.playerDataMap.get(u);
+			if(d != null && !d.eliminated && d.score <= fewestScore) {
+				fewestScore = d.score;
+				uuid = u;
+			}
+		}
+		if(uuid == null) {
+			BuildRush.LOGGER.error("Tried to eliminate last player but no players were found!");
+			return;
+		}
+		if(fewestScore == this.maxScore) {
+			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.no_elimination").formatted(Formatting.GREEN));
+		}
+		else {
+			if(!this.playerDataMap.containsKey(uuid)) {
+				BuildRush.LOGGER.error("Tried to eliminate last player but the player's data was not found!");
+				return;
+			}
+			this.eliminate(this.playerDataMap.get(uuid));
+		}
 	}
 
-	public void eliminatePlayer(UUID uuid) {
-		this.playerDataMap.get(uuid).eliminated = true;
+	public void eliminate(BRPlayerData data) {
+		ServerPlayerEntity player = null;
+		for(var uuid : this.playerDataMap.keySet()) {
+			if(this.playerDataMap.get(uuid) == data) {
+				for(var p : this.space.getPlayers()) {
+					if(p.getUuid().equals(uuid)) {
+						player = p;
+						break;
+					}
+				}
+				break;
+			}
+		}
+		if(data == null) {
+			if(player != null) {
+				BuildRush.LOGGER.error("Tried to eliminate player " + player.getName().getString() + " but they have no data!");
+			}
+			else {
+				BuildRush.LOGGER.error("Tried to eliminate a player but they left, and they have no data!");
+			}
+			return;
+		}
+		if(data.eliminated) {
+			if(player != null) {
+				BuildRush.LOGGER.error("Tried to eliminate player " + player.getName().getString() + " but they are already eliminated!");
+			}
+			else {
+				BuildRush.LOGGER.error("Tried to eliminate a player but they left, and they are already eliminated!");
+			}
+			return;
+		}
+		data.eliminated = true;
+		this.removeAlivePlayerPlot(data);
+		if(player != null) {
+			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.eliminated", player.getName().getString()).formatted(Formatting.RED));
+		}
 		this.refreshSidebar();
+
+		var aliveDatas = this.getAliveDatas();
+		if(aliveDatas.size() <= 1) {
+			for(var uuid : this.playerDataMap.keySet()) {
+				var d = this.playerDataMap.get(uuid);
+				if(d != null && !d.eliminated) {
+					for(var p : this.space.getPlayers()) {
+						if(p.getUuid().equals(uuid)) {
+							this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.win", p.getName(), this.round.getNumber()).formatted(Formatting.GREEN));
+							this.space.close(GameCloseReason.FINISHED);
+							return;
+						}
+					}
+					break;
+				}
+			}
+			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.win.unknown", this.round.getNumber()).formatted(Formatting.GREEN));
+			this.space.close(GameCloseReason.FINISHED);
+		}
 	}
 
 	public void giveInventory() {
@@ -341,6 +418,9 @@ public class BRActive {
 	private void removePlayer(ServerPlayerEntity player) {
 		var data = this.playerDataMap.remove(player.getUuid());
 		if(data != null) {
+			if(!data.eliminated) {
+				this.eliminate(data);
+			}
 			data.leave(player);
 		}
 		this.globalSidebar.removePlayer(player);
@@ -417,6 +497,9 @@ public class BRActive {
 			pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
 			for(int i = 5; i > 0; i--) {
 				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
+				if(newPos.getY() <= this.world.getBottomY()) {
+					continue;
+				}
 				if(world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
 					pos = newPos.toCenterPos();
 					break;
@@ -443,6 +526,43 @@ public class BRActive {
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 		}
 	}
+
+	public void resetScores() {
+		this.maxScore = 0;
+		for(var pos : this.centerPlot) {
+			if(!this.world.getBlockState(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
+				this.maxScore++;
+			}
+		}
+		for(var aliveData : getAliveDatas()) {
+			aliveData.score = 0;
+		}
+	}
+
+	public void sendScores() {
+		for(var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
+			if(data != null && !data.eliminated) {
+				float score = data.score / (float) this.maxScore;
+				String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
+				player.sendMessage(Text.translatable("text.build_rush.score", scoreAsPercent), false);
+			}
+		}
+	}
+
+	// I cannot use this method yet because the center plot is not placed when I'd like to use it
+	public void checkFinished(ServerPlayerEntity player) {
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data != null && !data.eliminated) {
+			player.sendMessage(Text.literal("You finished the plot!"), false);
+			data.score = this.maxScore;
+		}
+	}
+
+
+	/*================*/
+	/*  Calculations  */
+	/*================*/
 
 	public void calcPlatformsAndPlots() {
 		var aliveDatas = getAliveDatas();
@@ -494,6 +614,36 @@ public class BRActive {
 			this.inventory.add(stack);
 		}
 	}
+
+	public void calcPlayerScores() {
+		for(var aliveData : getAliveDatas()) {
+			aliveData.score = calcPlayerScore(aliveData);
+		}
+	}
+
+	public int calcPlayerScore(BRPlayerData playerData) {
+		int score = 0;
+		int size = this.centerPlot.size().getX();
+		for(int x = 0; x <= size; x++) {
+			for(int y = 0; y <= size; y++) {
+				for(int z = 0; z <= size; z++) {
+					var sourcePos =  this.centerPlot.min().add(x, y, z);
+					var targetPos = playerData.plot.min().add(x, y, z);
+					if(this.world.getBlockState(sourcePos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
+						continue;
+					}
+					if(PlotUtil.areEqual(this.world, sourcePos, targetPos)) {
+						score++;
+					}
+				}
+			}
+		}
+		return score;
+	}
+
+	/* ================= */
+	/*   Plot Placement  */
+	/* ================= */
 
 	public void placeAlivePlayerPlatforms() {
 		var aliveDatas = getAliveDatas();
@@ -550,11 +700,14 @@ public class BRActive {
 	public void removeAlivePlayerPlots() {
 		var aliveDatas = getAliveDatas();
 		for(var aliveData : aliveDatas) {
-			var plot = aliveData.plot;
-			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
-			for(var pos : plot) {
-				this.removeBlock(pos);
-			}
+			this.removeAlivePlayerPlot(aliveData);
+		}
+	}
+
+	public void removeAlivePlayerPlot(BRPlayerData data) {
+		this.world.playSound(null, new BlockPos(data.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
+		for(var pos : data.plot) {
+			this.removeBlock(pos);
 		}
 	}
 

@@ -16,6 +16,12 @@ import net.minecraft.world.World;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 public class PlotUtil {
+	public static boolean areEqual(World world, BlockPos sourcePos, BlockPos targetPos) {
+		var sourceState = world.getBlockState(sourcePos);
+		var targetState = world.getBlockState(targetPos);
+		return sourceState.equals(targetState);
+	}
+
 	public static ItemStack stackForBlock(World world, BlockPos pos) {
 		var state = world.getBlockState(pos);
 		var stack = state.getBlock().getPickStack(world, pos, state);
