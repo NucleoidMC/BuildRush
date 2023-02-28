@@ -1,7 +1,7 @@
 package fr.hugman.build_rush.plot;
 
 import fr.hugman.build_rush.BuildRush;
-import net.minecraft.block.BlockState;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
@@ -10,6 +10,7 @@ import net.minecraft.item.Items;
 import net.minecraft.item.SkullItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.state.property.Properties;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -24,24 +25,43 @@ public class PlotUtil {
 
 	public static ItemStack stackForBlock(World world, BlockPos pos) {
 		var state = world.getBlockState(pos);
-		var stack = state.getBlock().getPickStack(world, pos, state);
+		var block = state.getBlock();
+		var stack = block.getPickStack(world, pos, state);
+
+		if(block instanceof CandleBlock) {
+			stack.setCount(state.get(CandleBlock.CANDLES));
+		}
+		if(block instanceof SeaPickleBlock) {
+			stack.setCount(state.get(SeaPickleBlock.PICKLES));
+		}
+		if(block instanceof VineBlock) {
+			int count = 0;
+			if(state.get(VineBlock.UP)) count++;
+			if(state.get(VineBlock.NORTH)) count++;
+			if(state.get(VineBlock.EAST)) count++;
+			if(state.get(VineBlock.SOUTH)) count++;
+			if(state.get(VineBlock.WEST)) count++;
+			stack.setCount(count);
+		}
+		if(block instanceof MultifaceGrowthBlock) {
+			stack.setCount(MultifaceGrowthBlock.collectDirections(state).size());
+		}
 
 		if((state.isIn(BlockTags.PORTALS) || state.isIn(BlockTags.FIRE))) {
 			stack = new ItemStack(Items.FLINT_AND_STEEL);
 			stack.getOrCreateNbt().putBoolean("Unbreakable", true);
 		}
-		if(state.getFluidState().getFluid() == Fluids.WATER) {
+		if((state.getFluidState().getFluid() == Fluids.WATER)) {
 			stack = new ItemStack(Items.WATER_BUCKET);
 		}
 		if(state.getFluidState().getFluid() == Fluids.LAVA) {
 			stack = new ItemStack(Items.LAVA_BUCKET);
 		}
-		// TODO: verify for vines, sculk veins, candles...
 
 		if(state.hasBlockEntity()) {
 			var blockEntity = world.getBlockEntity(pos);
 			if(blockEntity == null) {
-				BuildRush.LOGGER.warn("Block entity was null for " + state.getBlock());
+				BuildRush.LOGGER.warn("Block entity was null for " + state.getBlock() + " even though the game said it had one");
 			}
 			else {
 				PlotUtil.addBlockEntityNbt(stack, blockEntity);
