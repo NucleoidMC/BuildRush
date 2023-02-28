@@ -472,10 +472,6 @@ public class BRActive {
 
 			b.add(Text.translatable("sidebar.build_rush.players_left", this.getAliveDatas().size()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
 			b.add(Text.empty());
-
-			var minutes = tick / 20 / 60;
-			var seconds = tick / 20 % 60;
-			b.add(Text.translatable("sidebar.build_rush.time", String.format("%02d", minutes), String.format("%02d", seconds)).setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
 		});
 	}
 

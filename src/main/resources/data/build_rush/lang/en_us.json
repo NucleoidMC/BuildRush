@@ -124,7 +124,6 @@
   "sidebar.build_rush.round": "Round %d",
   "sidebar.build_rush.players_left": "%d players left",
   "sidebar.build_rush.author": "by %d",
-  "sidebar.build_rush.time": "%s:%s",
 
   "bar.build_rush.time_left": "%s:%s left",
   "bar.build_rush.finished": "Finished!",
