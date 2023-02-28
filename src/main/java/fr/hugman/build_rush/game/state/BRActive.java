@@ -69,7 +69,8 @@ public class BRActive {
 	private final List<ItemStack> inventory;
 	private int maxScore;
 
-	private int tick;
+	private long tick;
+	private long closeTick;
 	private final BRRound round;
 	public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 	private boolean canBuild;
@@ -91,6 +92,7 @@ public class BRActive {
 
 		this.round = new BRRound(this, 10, 40);
 		this.tick = 0;
+		this.closeTick = Long.MAX_VALUE;
 		this.canBuild = false;
 	}
 
@@ -113,17 +115,18 @@ public class BRActive {
 			activity.listen(GameActivityEvents.TICK, this::tick);
 			activity.listen(GameActivityEvents.DESTROY, this::onClose);
 
+			activity.listen(GamePlayerEvents.OFFER, offer -> offer.accept(this.world, this.centerPlot.center()));
 			activity.listen(GamePlayerEvents.ADD, this::addPlayer);
 			activity.listen(GamePlayerEvents.REMOVE, this::removePlayer);
 
 			activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
 				if(source.isOutOfWorld()) {
-					this.resetPlayer(player);
+					this.resetPlayer(player, true);
 				}
 				return ActionResult.FAIL;
 			});
 			activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
-				this.resetPlayer(player);
+				this.resetPlayer(player, true);
 				return ActionResult.FAIL;
 			});
 			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
@@ -154,13 +157,19 @@ public class BRActive {
 		this.placeAlivePlayerPlatforms();
 
 		for(var player : this.space.getPlayers()) {
-			this.resetPlayer(player);
+			this.resetPlayer(player, true);
 			this.globalSidebar.addPlayer(player);
 		}
 	}
 
 	public void tick() {
 		this.tick++;
+		if(this.isClosing()) {
+			if(this.tick >= this.closeTick) {
+				this.space.close(GameCloseReason.FINISHED);
+			}
+			return;
+		}
 		this.round.tick();
 
 		var showCountdown = this.round.getState() == BRRound.BUILD || this.round.getState() == BRRound.MEMORIZE;
@@ -211,9 +220,21 @@ public class BRActive {
 		}
 	}
 
+	private void startClosing() {
+		this.closeTick = this.tick + 20 * 10;
+		for(var player : this.space.getPlayers()) {
+			player.getInventory().clear();
+			this.resetPlayer(player, false);
+		}
+	}
+
+	private boolean isClosing() {
+		return this.closeTick != Long.MAX_VALUE;
+	}
+
 	private void onClose(GameCloseReason gameCloseReason) {
 		this.globalSidebar.hide();
-		for (var player : this.space.getPlayers()) {
+		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
 			if(data != null) {
 				data.leave(player);
@@ -298,7 +319,7 @@ public class BRActive {
 					for(var p : this.space.getPlayers()) {
 						if(p.getUuid().equals(uuid)) {
 							this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.win", p.getName(), this.round.getNumber()).formatted(Formatting.GREEN));
-							this.space.close(GameCloseReason.FINISHED);
+							this.startClosing();
 							return;
 						}
 					}
@@ -306,7 +327,7 @@ public class BRActive {
 				}
 			}
 			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.win.unknown", this.round.getNumber()).formatted(Formatting.GREEN));
-			this.space.close(GameCloseReason.FINISHED);
+			this.startClosing();
 		}
 	}
 
@@ -366,7 +387,7 @@ public class BRActive {
 
 	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
 		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated) {
+		if(data == null || data.eliminated || this.isClosing()) {
 			return ActionResult.FAIL;
 		}
 		if(this.canBuild && data.plot.contains(pos)) {
@@ -377,7 +398,7 @@ public class BRActive {
 
 
 	private ActionResult placeFluid(ServerWorld world, BlockPos pos, @Nullable ServerPlayerEntity player, @Nullable BlockHitResult blockHitResult) {
-		if(player == null) {
+		if(player == null || this.isClosing()) {
 			return ActionResult.FAIL;
 		}
 		return placeBlock(player, world, pos, world.getBlockState(pos), null);
@@ -386,7 +407,7 @@ public class BRActive {
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
 		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated) {
+		if(data == null || data.eliminated || this.isClosing()) {
 			return ActionResult.FAIL;
 		}
 		if(this.canBuild && data.plot.contains(pos)) {
@@ -412,13 +433,13 @@ public class BRActive {
 
 	private void addPlayer(ServerPlayerEntity player) {
 		this.globalSidebar.addPlayer(player);
-		this.resetPlayer(player);
+		this.resetPlayer(player, true);
 	}
 
 	private void removePlayer(ServerPlayerEntity player) {
 		var data = this.playerDataMap.remove(player.getUuid());
 		if(data != null) {
-			if(!data.eliminated) {
+			if(!data.eliminated && !this.isClosing()) {
 				this.eliminate(data);
 			}
 			data.leave(player);
@@ -480,39 +501,40 @@ public class BRActive {
 		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
 			if(data != null && !data.eliminated) {
-				this.resetPlayer(player);
+				this.resetPlayer(player, true);
 			}
 		}
 	}
 
-	public void resetPlayer(ServerPlayerEntity player) {
+	public void resetPlayer(ServerPlayerEntity player, boolean teleport) {
 		var data = playerDataMap.get(player.getUuid());
-		boolean spectator = data == null || data.eliminated;
+		boolean spectator = data == null || data.eliminated || this.isClosing();
 
-		Vec3d pos;
-		if(spectator) {
-			pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(center.center())).toCenterPos();
-		}
-		else {
-			pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
-			for(int i = 5; i > 0; i--) {
-				var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
-				if(newPos.getY() <= this.world.getBottomY()) {
-					continue;
-				}
-				if(world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
-					pos = newPos.toCenterPos();
-					break;
+		if(teleport) {
+			Vec3d pos;
+			if(spectator) {
+				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(centerPlot.center())).toCenterPos();
+			}
+			else {
+				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
+				for(int i = 5; i > 0; i--) {
+					var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
+					if(newPos.getY() <= this.world.getBottomY()) {
+						continue;
+					}
+					if(world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
+						pos = newPos.toCenterPos();
+						break;
+					}
 				}
 			}
+			player.teleport(pos.getX(), pos.getY(), pos.getZ());
 		}
-		player.teleport(pos.getX(), pos.getY(), pos.getZ());
 
 		player.setHealth(20.0f);
-		player.changeGameMode(spectator ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+		player.changeGameMode(spectator && !this.isClosing() ? GameMode.SPECTATOR : GameMode.SURVIVAL);
 		if(!spectator) {
 			player.getAbilities().allowFlying = true;
-			player.getAbilities().flying = false;
 			player.sendAbilitiesUpdate();
 		}
 		player.getHungerManager().setFoodLevel(20);
@@ -627,7 +649,7 @@ public class BRActive {
 		for(int x = 0; x <= size; x++) {
 			for(int y = 0; y <= size; y++) {
 				for(int z = 0; z <= size; z++) {
-					var sourcePos =  this.centerPlot.min().add(x, y, z);
+					var sourcePos = this.centerPlot.min().add(x, y, z);
 					var targetPos = playerData.plot.min().add(x, y, z);
 					if(this.world.getBlockState(sourcePos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
 						continue;
@@ -682,7 +704,7 @@ public class BRActive {
 			var player = this.world.getPlayerByUuid(uuid);
 			if(player instanceof ServerPlayerEntity serverPlayer) {
 				if(!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
-					this.resetPlayer(serverPlayer);
+					this.resetPlayer(serverPlayer, true);
 				}
 			}
 		}
