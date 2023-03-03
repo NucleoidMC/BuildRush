@@ -3,6 +3,7 @@ package fr.hugman.build_rush.game.state;
 import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.event.WorldBlockBreakEvent;
 import fr.hugman.build_rush.game.BRPlayerData;
 import fr.hugman.build_rush.game.BRRound;
 import fr.hugman.build_rush.plot.PlotStructure;
@@ -10,6 +11,7 @@ import fr.hugman.build_rush.plot.PlotUtil;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -132,6 +134,7 @@ public class BRActive {
 			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
 			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
 			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
+			activity.listen(WorldBlockBreakEvent.EVENT, this::onBlockBroken);
 		});
 
 		return GameResult.ok();
@@ -435,6 +438,34 @@ public class BRActive {
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
 			data.breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
 			return ActionResult.SUCCESS;
+		}
+		return ActionResult.FAIL;
+	}
+
+	private ActionResult onBlockBroken(BlockPos pos, boolean drops, @Nullable Entity breakingEntity, int ignored) {
+		BRPlayerData data = null;
+		UUID uuid = null;
+		for(var entry : this.playerDataMap.entrySet()) {
+			if(entry.getValue().plot.contains(pos)) {
+				data = entry.getValue();
+				uuid = entry.getKey();
+				break;
+			}
+		}
+		if(data == null || data.eliminated || this.isClosing()) {
+			return ActionResult.FAIL;
+		}
+		if(this.canBuild) {
+			var state = this.world.getBlockState(pos);
+			var center = pos.toCenterPos();
+			var player = this.space.getPlayers().getEntity(uuid);
+
+			this.giveBlock(player, pos);
+			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+			data.breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
+			return ActionResult.FAIL;
 		}
 		return ActionResult.FAIL;
 	}

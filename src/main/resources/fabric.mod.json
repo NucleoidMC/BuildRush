@@ -15,6 +15,9 @@
       "fr.hugman.build_rush.BuildRush"
     ]
   },
+  "mixins": [
+    "build_rush.mixins.json"
+  ],
   "depends": {
     "java": ">=17",
     "minecraft": ">=1.19.3",
