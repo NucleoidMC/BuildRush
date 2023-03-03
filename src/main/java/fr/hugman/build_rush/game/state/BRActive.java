@@ -307,6 +307,7 @@ public class BRActive {
 		data.eliminated = true;
 		this.removeAlivePlayerPlot(data);
 		if(player != null) {
+			this.resetPlayer(player, false);
 			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.eliminated", player.getName().getString()).formatted(Formatting.RED));
 		}
 		this.refreshSidebar();
