@@ -75,7 +75,9 @@ public class BRWaiting {
 				var spawnPos = new BlockPos(centerBounds.center());
 
 				activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
-					resetPlayer(player, world, spawnPos);
+					if(source.isOutOfWorld()) {
+						resetPlayer(player, world, spawnPos);
+					}
 					return ActionResult.FAIL;
 				});
 				activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
