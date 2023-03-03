@@ -354,7 +354,14 @@ public class BRActive {
 	}
 
 	public void giveBlock(PlayerEntity player, BlockPos pos) {
-		this.give(player, PlotUtil.stackForBlock(world, pos));
+		this.give(player, PlotUtil.stacksForBlock(world, pos));
+	}
+
+
+	public void give(PlayerEntity player, List<ItemStack> stacks) {
+		for(var stack : stacks) {
+			this.give(player, stack);
+		}
 	}
 
 	public void give(PlayerEntity player, ItemStack stack) {
@@ -628,8 +635,8 @@ public class BRActive {
 	public void calcInventory() {
 		this.inventory.clear();
 		for(var pos : this.centerPlot) {
-			var stack = PlotUtil.stackForBlock(world, pos);
-			this.inventory.add(stack);
+			var stacks = PlotUtil.stacksForBlock(world, pos);
+			this.inventory.addAll(stacks);
 		}
 	}
 

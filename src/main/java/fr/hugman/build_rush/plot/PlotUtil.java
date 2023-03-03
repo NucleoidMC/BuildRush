@@ -3,6 +3,7 @@ package fr.hugman.build_rush.plot;
 import fr.hugman.build_rush.BuildRush;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.enums.SlabType;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -10,11 +11,13 @@ import net.minecraft.item.Items;
 import net.minecraft.item.SkullItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.state.property.Properties;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import xyz.nucleoid.map_templates.BlockBounds;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlotUtil {
 	public static boolean areEqual(World world, BlockPos sourcePos, BlockPos targetPos) {
@@ -23,16 +26,27 @@ public class PlotUtil {
 		return sourceState.equals(targetState);
 	}
 
-	public static ItemStack stackForBlock(World world, BlockPos pos) {
+	public static List<ItemStack> stacksForBlock(World world, BlockPos pos) {
+		List<ItemStack> stacks = new ArrayList<>();
+
 		var state = world.getBlockState(pos);
 		var block = state.getBlock();
-		var stack = block.getPickStack(world, pos, state);
+		var fluidState = state.getFluidState();
+		var fluid = fluidState.getFluid();
+
+		var pickStack = block.getPickStack(world, pos, state);
+		stacks.add(pickStack);
 
 		if(block instanceof CandleBlock) {
-			stack.setCount(state.get(CandleBlock.CANDLES));
+			pickStack.setCount(state.get(CandleBlock.CANDLES));
+			if(state.get(CandleBlock.LIT)) {
+				var flintStack = new ItemStack(Items.FLINT_AND_STEEL);
+				flintStack.getOrCreateNbt().putBoolean("Unbreakable", true);
+				stacks.add(flintStack);
+			}
 		}
 		if(block instanceof SeaPickleBlock) {
-			stack.setCount(state.get(SeaPickleBlock.PICKLES));
+			pickStack.setCount(state.get(SeaPickleBlock.PICKLES));
 		}
 		if(block instanceof VineBlock) {
 			int count = 0;
@@ -41,21 +55,33 @@ public class PlotUtil {
 			if(state.get(VineBlock.EAST)) count++;
 			if(state.get(VineBlock.SOUTH)) count++;
 			if(state.get(VineBlock.WEST)) count++;
-			stack.setCount(count);
+			pickStack.setCount(count);
 		}
 		if(block instanceof MultifaceGrowthBlock) {
-			stack.setCount(MultifaceGrowthBlock.collectDirections(state).size());
+			pickStack.setCount(MultifaceGrowthBlock.collectDirections(state).size());
+		}
+		if(block instanceof SlabBlock) {
+			pickStack.setCount(state.get(SlabBlock.TYPE) == SlabType.DOUBLE ? 2 : 1);
+		}
+		if(block instanceof EndPortalFrameBlock) {
+			if(state.get(EndPortalFrameBlock.EYE)) {
+				stacks.add(new ItemStack(Items.ENDER_EYE));
+			}
+		}
+		if(block instanceof RespawnAnchorBlock) {
+			stacks.add(new ItemStack(Items.GLOWSTONE, state.get(RespawnAnchorBlock.CHARGES)));
 		}
 
+
 		if((state.isIn(BlockTags.PORTALS) || state.isIn(BlockTags.FIRE))) {
-			stack = new ItemStack(Items.FLINT_AND_STEEL);
-			stack.getOrCreateNbt().putBoolean("Unbreakable", true);
+			pickStack = new ItemStack(Items.FLINT_AND_STEEL);
+			pickStack.getOrCreateNbt().putBoolean("Unbreakable", true);
 		}
-		if((state.getFluidState().getFluid() == Fluids.WATER)) {
-			stack = new ItemStack(Items.WATER_BUCKET);
+		if(fluid == Fluids.WATER) {
+			stacks.add(new ItemStack(Items.WATER_BUCKET));
 		}
-		if(state.getFluidState().getFluid() == Fluids.LAVA) {
-			stack = new ItemStack(Items.LAVA_BUCKET);
+		if(fluid == Fluids.LAVA) {
+			stacks.add(new ItemStack(Items.LAVA_BUCKET));
 		}
 
 		if(state.hasBlockEntity()) {
@@ -64,10 +90,10 @@ public class PlotUtil {
 				BuildRush.LOGGER.warn("Block entity was null for " + state.getBlock() + " even though the game said it had one");
 			}
 			else {
-				PlotUtil.addBlockEntityNbt(stack, blockEntity);
+				PlotUtil.addBlockEntityNbt(pickStack, blockEntity);
 			}
 		}
-		return stack;
+		return stacks;
 	}
 
 	public static void addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {
