@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/weathered_wave",
+  "name": {
+    "translate": "plot_structure.weathered_wave"
+  },
+  "author": {
+    "name": "haykam",
+    "uuid": "c705fc7d-0962-4d1e-905b-b83d81d9b4ec"
+  }
+}

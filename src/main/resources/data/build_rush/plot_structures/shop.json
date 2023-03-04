@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/shop",
+  "name": {
+    "translate": "plot_structure.shop"
+  },
+  "author": {
+    "name": "Siuolplex",
+    "uuid": "07cb3dfd-ee1d-4ecf-b5b5-f70d317a82eb"
+  }
+}

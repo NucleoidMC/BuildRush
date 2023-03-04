@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/cake",
+  "name": {
+    "translate": "plot_structure.cake"
+  },
+  "author": {
+    "name": "Pufferq",
+    "uuid": "d60cf2a1-2310-4ead-971f-77ae381ac571"
+  }
+}

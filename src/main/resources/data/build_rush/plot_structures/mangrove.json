@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/mangrove",
+  "name": {
+    "translate": "plot_structure.mangrove"
+  },
+  "author": {
+    "name": "haykam",
+    "uuid": "c705fc7d-0962-4d1e-905b-b83d81d9b4ec"
+  }
+}
