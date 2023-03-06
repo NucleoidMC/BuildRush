@@ -1,1 +1,25 @@
-{}
+{
+    "text.build_rush.win.unknown": "Quelqu'un a gagné après %d tours... mais on ne sait pas qui ? (contactez l'auteur du jeu, SVP)",
+    "plot_structure.a_very_serious_guy": "Un gars très sérieux",
+    "plot_structure.banana": "Banane",
+    "text.build_rush.eliminated": "%s a été éliminé !",
+    "error.build_rush.region.center.not_found": "La région 'center' n'a pas été trouvée",
+    "bar.build_rush.finished": "Fini !",
+    "bar.build_rush.time_left": "%s:%s restant",
+    "sidebar.build_rush.players_left": "%d joueurs sont partis",
+    "error.build_rush.plot_structure.not_found": "La structure de parcelle '%s' n'est pas disponible",
+    "error.build_rush.plot_ground.invalid_height": "Le sol de structure de parcelle '%s' doit faire un bloc de haut (a trouvé %d, attendais 1)",
+    "error.build_rush.plot_ground.invalid_width_length": "Le sol de structure de parcelle doit être carré (a trouvé %d,%d, attendais la même largeur et longueur)",
+    "error.build_rush.plot_ground.not_found": "Le sol de structure de parcelle '%s' n'est pas disponible",
+    "error.build_rush.plot_structure.none.weird": "Aucune structure de parcelle n'est disponible (quoi ?)",
+    "error.build_rush.plot_structure.none": "Aucune structure de parcelle n'est disponible",
+    "error.build_rush.plot_structure.invalid_size": "La structure de parcelle '%s' n'est pas de la bonne taille (a trouvé %d,%d,%d, attendais %d,%d,%d ou %d,%d,%d)",
+    "sidebar.build_rush.author": "par %d",
+    "game.build_rush": "Build Rush",
+    "sidebar.build_rush.round": "Tour %d",
+    "sidebar.build_rush.build": "Structure",
+    "error.build_rush.platform.not_found": "La structure de platforme '%s' n'est pas disponible",
+    "text.build_rush.win": "%s a gagné après %d tours !",
+    "text.build_rush.score": "Votre construction est correcte à %s pourcents !",
+    "text.build_rush.no_elimination": "Félicitations ! Personne n'a été éliminé !"
+}
