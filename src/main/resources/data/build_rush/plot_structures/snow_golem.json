@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/snow_golem",
   "name": {
-    "translate": "plot_structure.snow_golem"
+    "translate": "entity.minecraft.snow_golem"
   },
   "author": {
     "name": "Napero",

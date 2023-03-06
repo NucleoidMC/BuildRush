@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/golden_apple",
   "name": {
-    "translate": "plot_structure.golden_apple"
+    "translate": "item.minecraft.golden_apple"
   },
   "author": {
     "name": "Pufferq",

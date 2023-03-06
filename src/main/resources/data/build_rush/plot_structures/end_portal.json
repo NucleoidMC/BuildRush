@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/end_portal",
   "name": {
-    "translate": "plot_structure.end_portal"
+    "translate": "block.minecraft.end_portal"
   },
   "author": {
     "name": "Napero",

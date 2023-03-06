@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/conduit",
   "name": {
-    "translate": "plot_structure.conduit"
+    "translate": "block.minecraft.conduit"
   },
   "author": {
     "name": "Napero",

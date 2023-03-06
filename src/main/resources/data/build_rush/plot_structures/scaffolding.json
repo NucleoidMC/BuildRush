@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/scaffolding",
   "name": {
-    "translate": "plot_structure.scaffolding"
+    "translate": "block.minecraft.scaffolding"
   },
   "author": {
     "name": "haykam",

@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/diamond_pickaxe",
   "name": {
-    "translate": "plot_structure.diamond_pickaxe"
+    "translate": "item.minecraft.diamond_pickaxe"
   },
   "author": {
     "name": "Napero",

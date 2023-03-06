@@ -1,7 +1,7 @@
 {
   "type": "build_rush:standard",
   "name": {
-    "translate": "map.build_rush.rock_candy_mines"
+    "translate": "game.build_rush.small"
   },
   "icon": "minecraft:dripstone_block",
   "players": {

@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/intentional_game_design",
   "name": {
-    "translate": "plot_structure.intentional_game_design"
+    "translate": "death.attack.badRespawnPoint.link"
   },
   "author": {
     "name": "Napero",

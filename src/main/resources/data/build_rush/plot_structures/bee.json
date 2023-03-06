@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/bee",
   "name": {
-    "translate": "plot_structure.bee"
+    "translate": "entity.minecraft.bee"
   },
   "author": {
     "name": "Napero",

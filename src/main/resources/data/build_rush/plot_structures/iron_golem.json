@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/iron_golem",
   "name": {
-    "translate": "plot_structure.iron_golem"
+    "translate": "entity.minecraft.iron_golem"
   },
   "author": {
     "name": "Napero",

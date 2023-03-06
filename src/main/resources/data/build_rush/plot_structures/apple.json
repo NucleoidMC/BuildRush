@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/apple",
   "name": {
-    "translate": "plot_structure.apple"
+    "translate": "item.minecraft.apple"
   },
   "author": {
     "name": "Komerish",

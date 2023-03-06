@@ -1,6 +1,6 @@
 {
   "structure": "build_rush:plot/sea_lantern",
   "name": {
-    "translate": "plot_structure.sea_lantern"
+    "translate": "block.minecraft.sea_lantern"
   }
 }

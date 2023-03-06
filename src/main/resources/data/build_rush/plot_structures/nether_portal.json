@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/nether_portal",
   "name": {
-    "translate": "plot_structure.nether_portal"
+    "translate": "block.minecraft.nether_portal"
   },
   "author": {
     "name": "Napero",

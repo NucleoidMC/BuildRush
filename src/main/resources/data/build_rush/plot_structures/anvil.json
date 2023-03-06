@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/anvil",
   "name": {
-    "translate": "plot_structure.anvil"
+    "translate": "block.minecraft.anvil"
   },
   "author": {
     "name": "Napero",
