@@ -22,7 +22,7 @@
     "text.build_rush.win": "%s a gagné après %d tours !",
     "text.build_rush.score": "Votre construction est correcte à %s pourcents !",
     "text.build_rush.no_elimination": "Félicitations ! Personne n'a été éliminé !",
-    "map.build_rush.rock_candy_mines": "Mines Candi",
+    "map.build_rush.rock_candy_mines": "Les Mines de Bonbon",
     "plot_structure.amethyst_geode": "Géode d'améthyste",
     "plot_structure.ancient_monument": "Ancien monument",
     "plot_structure.bed_defense": "Défense de lit",
@@ -93,7 +93,7 @@
     "plot_structure.flags.signal.foxtrot": "Foxtrot",
     "plot_structure.flags.signal.second": "Second substitut",
     "plot_structure.flags.signal.sierra": "Sierra",
-    "game.build_rush.flags.signal": "Build Rush : Drapeaux de signalisation maritime",
+    "game.build_rush.flags.signal": "Build Rush : Drapeaux de signalisation",
     "plot_structure.fountain": "Fontaine",
     "plot_structure.honey": "Miel",
     "plot_structure.palm_tree": "Palmier",
@@ -158,5 +158,6 @@
     "plot_structure.the_mitten": "La moufle",
     "plot_structure.weathered_wave": "Vague usée",
     "plot_structure.withersweeper": "Balayeurwither",
-    "plot_structure.the_one_who_pulls_out_this_sword_will_be_crowned_king": "Celui qui tire cette épée sera couronné roi"
+    "plot_structure.the_one_who_pulls_out_this_sword_will_be_crowned_king": "Celui qui tire cette épée sera couronné roi",
+    "plot_structure.gerald": "Gérald"
 }
