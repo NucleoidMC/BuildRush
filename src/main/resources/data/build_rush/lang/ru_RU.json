@@ -158,5 +158,6 @@
     "plot_structure.flags.signal.first": "Первый заменяющий",
     "plot_structure.flags.signal.fourth": "Четвёртый заменяющий",
     "plot_structure.intentional_game_design_v2": "Жестокие правила игры V2",
-    "game.build_rush.huge": "Build Rush: Большой (9x9)"
+    "game.build_rush.huge": "Build Rush: Большой (9x9)",
+    "plot_structure.real_time_balancing": "Балансирование в реальном времени"
 }
