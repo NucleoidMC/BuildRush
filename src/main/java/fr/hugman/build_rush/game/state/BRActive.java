@@ -3,6 +3,7 @@ package fr.hugman.build_rush.game.state;
 import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
 import fr.hugman.build_rush.game.BRPlayerData;
 import fr.hugman.build_rush.game.BRRound;
@@ -28,6 +29,7 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -35,6 +37,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
@@ -49,6 +52,7 @@ import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
+import xyz.nucleoid.stimuli.event.world.FluidFlowEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,6 +139,7 @@ public class BRActive {
 			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
 			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
 			activity.listen(WorldBlockBreakEvent.EVENT, this::onBlockBroken);
+			activity.listen(UseEvents.USE_BLOCK, this::onBlockUsed);
 		});
 
 		return GameResult.ok();
@@ -407,13 +412,15 @@ public class BRActive {
 		return ActionResult.FAIL;
 	}
 
-
 	private ActionResult placeFluid(ServerWorld world, BlockPos pos, @Nullable ServerPlayerEntity player, @Nullable BlockHitResult blockHitResult) {
 		if(player == null || this.isClosing()) {
 			return ActionResult.FAIL;
 		}
 		return placeBlock(player, world, pos, world.getBlockState(pos), null);
+	}
 
+	private ActionResult onBlockUsed(BlockState state, World world, BlockPos blockPos, PlayerEntity playerEntity, Hand hand, BlockHitResult blockHitResult) {
+		return ActionResult.FAIL;
 	}
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
