@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "fr.hugman.build_rush.mixin",
   "compatibilityLevel": "JAVA_17",
-  "mixins": ["AbstractBlockMixin", "WorldMixin"],
+  "mixins": ["AbstractBlockStateMixin", "ItemStackMixin", "WorldMixin"],
   "injectors": {
     "defaultRequire": 1
   }

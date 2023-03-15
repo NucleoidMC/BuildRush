@@ -16,7 +16,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -52,7 +51,6 @@ import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
-import xyz.nucleoid.stimuli.event.world.FluidFlowEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +77,7 @@ public class BRActive {
 	private long closeTick;
 	private final BRRound round;
 	public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
-	private boolean canBuild;
+	private boolean canInteractWithWorld;
 
 	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<PlotStructure> plotStructures) {
 		this.config = config;
@@ -99,7 +97,7 @@ public class BRActive {
 		this.round = new BRRound(this, 10, 40);
 		this.tick = 0;
 		this.closeTick = Long.MAX_VALUE;
-		this.canBuild = false;
+		this.canInteractWithWorld = false;
 	}
 
 	public GameResult transferActivity() {
@@ -135,11 +133,13 @@ public class BRActive {
 				this.resetPlayer(player, true);
 				return ActionResult.FAIL;
 			});
-			activity.listen(BlockPlaceEvent.BEFORE, this::placeBlock);
-			activity.listen(FluidPlaceEvent.EVENT, this::placeFluid);
+			activity.listen(BlockPlaceEvent.BEFORE, (player, world1, pos, state, context) -> this.interactWithWorld(player, pos));
+			activity.listen(FluidPlaceEvent.EVENT, (world1, pos, player, hitResult) -> this.interactWithWorld(player, pos));
 			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
 			activity.listen(WorldBlockBreakEvent.EVENT, this::onBlockBroken);
-			activity.listen(UseEvents.USE_BLOCK, this::onBlockUsed);
+			activity.listen(UseEvents.BLOCK, this::onBlockUsed);
+			activity.listen(UseEvents.ITEM_ON_BLOCK, (stack, context) ->
+					this.interactWithWorld((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector())));
 		});
 
 		return GameResult.ok();
@@ -252,7 +252,7 @@ public class BRActive {
 	}
 
 	public void canBuild(boolean canBuild) {
-		this.canBuild = canBuild;
+		this.canInteractWithWorld = canBuild;
 	}
 
 	public void eliminateLast() {
@@ -401,22 +401,37 @@ public class BRActive {
 	/*  LISTENERS  */
 	/*=============*/
 
-	private ActionResult placeBlock(ServerPlayerEntity player, ServerWorld world, BlockPos pos, BlockState state, ItemUsageContext itemUsageContext) {
-		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated || this.isClosing()) {
-			return ActionResult.FAIL;
-		}
-		if(this.canBuild && data.plot.contains(pos)) {
-			return ActionResult.SUCCESS;
-		}
-		return ActionResult.FAIL;
+	private ActionResult interactWithWorld(@Nullable ServerPlayerEntity player, BlockPos pos) {
+		return canInteractWithWorld(player, pos) ? ActionResult.SUCCESS : ActionResult.FAIL;
 	}
 
-	private ActionResult placeFluid(ServerWorld world, BlockPos pos, @Nullable ServerPlayerEntity player, @Nullable BlockHitResult blockHitResult) {
-		if(player == null || this.isClosing()) {
-			return ActionResult.FAIL;
+	private boolean canInteractWithWorld(@Nullable ServerPlayerEntity player, BlockPos pos) {
+		if(!this.canInteractWithWorld) {
+			BuildRush.debug("interactWithWorld: cannot build");
+			return false;
 		}
-		return placeBlock(player, world, pos, world.getBlockState(pos), null);
+		if(player == null) {
+			BuildRush.debug("interactWithWorld: player is null");
+			return false;
+		}
+		if(this.isClosing()) {
+			BuildRush.debug("interactWithWorld: game is closing");
+			return false;
+		}
+		var data = this.playerDataMap.get(player.getUuid());
+		if(data == null) {
+			BuildRush.debug("interactWithWorld: player has no data");
+			return false;
+		}
+		if(data.eliminated) {
+			BuildRush.debug("interactWithWorld: player is eliminated");
+			return false;
+		}
+		if(!data.plot.contains(pos)) {
+			BuildRush.debug("interactWithWorld: block outside player's plot");
+			return false;
+		}
+		return true;
 	}
 
 	private ActionResult onBlockUsed(BlockState state, World world, BlockPos blockPos, PlayerEntity playerEntity, Hand hand, BlockHitResult blockHitResult) {
@@ -424,11 +439,7 @@ public class BRActive {
 	}
 
 	private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-		var data = this.playerDataMap.get(player.getUuid());
-		if(data == null || data.eliminated || this.isClosing()) {
-			return ActionResult.FAIL;
-		}
-		if(this.canBuild && data.plot.contains(pos)) {
+		if(canInteractWithWorld(player, pos)) {
 			/*
 			  This currently doesn't work very well, so I'm disabling it for now
 			  If you hold the click it won't break the second block if you're still holding the click
@@ -443,7 +454,7 @@ public class BRActive {
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
-			data.breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
+			this.playerDataMap.get(player.getUuid()).breakingCooldown = BRPlayerData.BREAKING_COOLDOWN;
 			return ActionResult.SUCCESS;
 		}
 		return ActionResult.FAIL;
@@ -462,7 +473,7 @@ public class BRActive {
 		if(data == null || data.eliminated || this.isClosing()) {
 			return ActionResult.FAIL;
 		}
-		if(this.canBuild) {
+		if(this.canInteractWithWorld) {
 			var state = this.world.getBlockState(pos);
 			var center = pos.toCenterPos();
 			var player = this.space.getPlayers().getEntity(uuid);
