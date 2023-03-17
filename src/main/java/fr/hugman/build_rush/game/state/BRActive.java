@@ -139,7 +139,8 @@ public class BRActive {
 			activity.listen(WorldBlockBreakEvent.EVENT, this::onBlockBroken);
 			activity.listen(UseEvents.BLOCK, this::onBlockUsed);
 			activity.listen(UseEvents.ITEM_ON_BLOCK, (stack, context) ->
-					this.interactWithWorld((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector())));
+					this.interactWithWorld((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector()))
+			);
 		});
 
 		return GameResult.ok();
@@ -347,7 +348,7 @@ public class BRActive {
 				continue;
 			}
 			for(var stack : inventory) {
-				this.give(player, stack);
+				this.give(player, stack, false);
 			}
 		}
 	}
@@ -363,17 +364,16 @@ public class BRActive {
 	}
 
 	public void giveBlock(PlayerEntity player, BlockPos pos) {
-		this.give(player, PlotUtil.stacksForBlock(world, pos));
-	}
+		var stacks = PlotUtil.stacksForBlock(world, pos);
+		var firstStack = stacks.get(0);
 
-
-	public void give(PlayerEntity player, List<ItemStack> stacks) {
-		for(var stack : stacks) {
-			this.give(player, stack);
+		this.give(player, firstStack, true);
+		for(int i = 1; i < stacks.size(); i++) {
+			this.give(player, stacks.get(i), false);
 		}
 	}
 
-	public void give(PlayerEntity player, ItemStack stack) {
+	public void give(PlayerEntity player, ItemStack stack, boolean giveToHand) {
 		if(stack.isOf(Items.FLINT_AND_STEEL)) {
 			// only give it if they don't have it already
 			for(var item : player.getInventory().main) {
@@ -394,7 +394,17 @@ public class BRActive {
 				}
 			}
 		}
-		player.giveItemStack(stack.copy());
+		if(giveToHand) {
+			var slot = player.getInventory().selectedSlot;
+			var oldStack = player.getInventory().getStack(slot);
+			player.getInventory().setStack(slot, stack.copy());
+			if(!oldStack.isEmpty()) {
+				player.giveItemStack(oldStack);
+			}
+		}
+		else {
+			player.giveItemStack(stack.copy());
+		}
 	}
 
 	/*=============*/
