@@ -14,6 +14,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossBar;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -124,7 +125,7 @@ public class BRActive {
 			activity.listen(GamePlayerEvents.REMOVE, this::removePlayer);
 
 			activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
-				if(source.isOutOfWorld()) {
+				if(source.isOf(DamageTypes.OUT_OF_WORLD)) {
 					this.resetPlayer(player, true);
 				}
 				return ActionResult.FAIL;
@@ -576,12 +577,12 @@ public class BRActive {
 		if(teleport) {
 			Vec3d pos;
 			if(spectator) {
-				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(centerPlot.center())).toCenterPos();
+				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(centerPlot.center())).toCenterPos();
 			}
 			else {
-				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
+				pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(data.plot.center()).add(0, 0, data.plot.size().getZ())).toCenterPos();
 				for(int i = 5; i > 0; i--) {
-					var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, new BlockPos(data.plot.center().add(0, 0, i)));
+					var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(data.plot.center().add(0, 0, i)));
 					if(newPos.getY() <= this.world.getBottomY()) {
 						continue;
 					}
@@ -678,8 +679,8 @@ public class BRActive {
 			int x2 = platformSize.getX() - x1 - 1;
 			int z2 = platformSize.getZ() - z1 - 1;
 
-			BlockPos minPos = new BlockPos(x - x1, y, z - z1);
-			BlockPos maxPos = new BlockPos(x + x2, y + platformSize.getY(), z + z2);
+			BlockPos minPos = BlockPos.ofFloored(x - x1, y, z - z1);
+			BlockPos maxPos = BlockPos.ofFloored(x + x2, y + platformSize.getY(), z + z2);
 
 			aliveData.platform = BlockBounds.of(minPos, maxPos);
 
@@ -751,7 +752,7 @@ public class BRActive {
 		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		for(var aliveData : aliveDatas) {
-			this.world.playSound(null, new BlockPos(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
+			this.world.playSound(null, BlockPos.ofFloored(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
 			var plotPos = aliveData.plot.min();
 			if(shouldPlacePlotGround) {
 				plotPos = plotPos.down();
@@ -790,7 +791,7 @@ public class BRActive {
 	}
 
 	public void removeAlivePlayerPlot(BRPlayerData data) {
-		this.world.playSound(null, new BlockPos(data.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
+		this.world.playSound(null, BlockPos.ofFloored(data.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 		for(var pos : data.plot) {
 			this.removeBlock(pos);
 		}
@@ -803,7 +804,7 @@ public class BRActive {
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();
 		}
-		this.world.playSound(null, new BlockPos(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
+		this.world.playSound(null, BlockPos.ofFloored(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
 		structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 		this.calcInventory();
 	}
@@ -814,7 +815,7 @@ public class BRActive {
 	}
 
 	public void removeCenterPlot() {
-		this.world.playSound(null, new BlockPos(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
+		this.world.playSound(null, BlockPos.ofFloored(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 		for(var pos : this.centerPlot) {
 			this.removeBlock(pos);
 		}

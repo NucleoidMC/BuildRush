@@ -14,7 +14,7 @@ public class StringParser {
 				try {
 					return DataResult.success(StringParser.vec3dFromString(string));
 				} catch(IllegalArgumentException e) {
-					return DataResult.error("Malformed 3D position string");
+					return DataResult.error(() -> "Malformed 3D position string");
 				}
 			},
 			StringParser::toString
@@ -25,7 +25,7 @@ public class StringParser {
 				try {
 					return DataResult.success(StringParser.blockPosFromString(string));
 				} catch(IllegalArgumentException e) {
-					return DataResult.error("Malformed block position string");
+					return DataResult.error(() -> "Malformed block position string");
 				}
 			},
 			StringParser::toString

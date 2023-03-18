@@ -1,9 +1,9 @@
 package fr.hugman.build_rush.game.state;
 
 import fr.hugman.build_rush.BRConfig;
-import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.plot.PlotStructure;
 import fr.hugman.build_rush.registry.BRRegistries;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.structure.StructureTemplateManager;
 import net.minecraft.text.Text;
@@ -72,10 +72,10 @@ public class BRWaiting {
 				int plotSize = plotGround.getSize().getX();
 				var plotStructures = getPlotStructures(plotSize, config, templateManager);
 				var centerPlot = getCenterPlot(centerRegion, config.map().centerPlotOffset(), plotSize);
-				var spawnPos = new BlockPos(centerBounds.center());
+				var spawnPos = BlockPos.ofFloored(centerBounds.center());
 
 				activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
-					if(source.isOutOfWorld()) {
+					if(source.isOf(DamageTypes.OUT_OF_WORLD)) {
 						resetPlayer(player, world, spawnPos);
 					}
 					return ActionResult.FAIL;
