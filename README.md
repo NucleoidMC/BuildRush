@@ -25,3 +25,12 @@ For more information, see [our website](https://nucleoid.xyz).
 - haykam
 - Sioul
 - Komerish
+
+### 🌐 Translations
+| Language         | Translators                                                                |
+|------------------|----------------------------------------------------------------------------|
+| English (base)   | [Hugman](https://github.com/Hugman76)                                      |
+| French           | [Hugman](https://github.com/Hugman76), [Voxxin](https://github.com/Voxxin) |
+| Swedish          | Komerish                                                                   |
+| Norwegian Bokmål | [comradekingu](https://github.com/comradekingu)                            |
+| Russian          | [Jerozgen](https://github.com/Jerozgen)                                    |
