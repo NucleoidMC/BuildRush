@@ -1,7 +1,7 @@
 {
   "structure": "build_rush:plot/enchanter",
   "name": {
-    "translate": "advancements.story.enchant_item.title"
+    "translate": "plot_structure.enchanter"
   },
   "author": {
     "name": "Napero",
