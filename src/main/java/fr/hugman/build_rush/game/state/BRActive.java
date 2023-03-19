@@ -222,6 +222,15 @@ public class BRActive {
 						data.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 
 						if(stateTick % 20 == 0) {
+							if(stateSeconds >= 30) {
+								data.bar.setColor(BossBar.Color.GREEN);
+							}
+							else if(stateSeconds >= 15) {
+								data.bar.setColor(BossBar.Color.YELLOW);
+							}
+							else if(stateSeconds <= 10) {
+								data.bar.setColor(BossBar.Color.RED);
+							}
 							if(stateSeconds == 0 && stateMinutes == 1) {
 								TitleUtil.sendSub(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
 								//TODO: play sound
@@ -230,14 +239,7 @@ public class BRActive {
 								TitleUtil.sendSub(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
 								//TODO: play sound
 							}
-							if(stateSeconds >= 30) {
-								data.bar.setColor(BossBar.Color.GREEN);
-							}
-							else if(stateSeconds >= 15) {
-								data.bar.setColor(BossBar.Color.YELLOW);
-							}
-							else {
-								data.bar.setColor(BossBar.Color.RED);
+							if(stateSeconds <= 5) {
 								TitleUtil.sendSub(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
 								//TODO: play sound
 							}
