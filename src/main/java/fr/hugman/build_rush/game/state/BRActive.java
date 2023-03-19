@@ -3,13 +3,16 @@ package fr.hugman.build_rush.game.state;
 import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.build.Build;
+import fr.hugman.build_rush.build.BuildUtil;
+import fr.hugman.build_rush.build.CachedBuild;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
 import fr.hugman.build_rush.game.BRPlayerData;
 import fr.hugman.build_rush.game.BRRound;
-import fr.hugman.build_rush.plot.PlotStructure;
-import fr.hugman.build_rush.plot.PlotUtil;
 import fr.hugman.build_rush.registry.tag.BRTags;
+import fr.hugman.build_rush.title.TitleUtil;
+import net.minecraft.SharedConstants;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
@@ -18,6 +21,7 @@ import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -35,6 +39,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -52,6 +57,7 @@ import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
+import xyz.nucleoid.stimuli.event.world.FluidFlowEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,12 +72,13 @@ public class BRActive {
 	private final BlockBounds centerPlot;
 	private final StructureTemplate platform;
 	private final StructureTemplate plotGround;
-	private final List<PlotStructure> plotStructures;
-	private final List<PlotStructure> usedPlotStructures;
+	private final List<Build> builds;
+	private final List<Build> usedBuilds;
 
 	private final HashMap<UUID, BRPlayerData> playerDataMap;
-	private PlotStructure currentPlotStructure;
-	private final List<ItemStack> inventory;
+	private Build currentBuild;
+	private CachedBuild cachedBuild;
+	private final List<ItemStack> cachedBuildItems;
 	private int maxScore;
 
 	private long tick;
@@ -80,7 +87,7 @@ public class BRActive {
 	public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 	private boolean canInteractWithWorld;
 
-	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<PlotStructure> plotStructures) {
+	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<Build> builds) {
 		this.config = config;
 		this.space = space;
 		this.world = world;
@@ -88,12 +95,12 @@ public class BRActive {
 		this.centerPlot = centerPlot;
 		this.platform = platform;
 		this.plotGround = plotGround;
-		this.plotStructures = plotStructures;
-		this.usedPlotStructures = new ArrayList<>();
+		this.builds = builds;
+		this.usedBuilds = new ArrayList<>();
 
 		this.playerDataMap = new HashMap<>();
-		this.currentPlotStructure = null;
-		this.inventory = new ArrayList<>();
+		this.currentBuild = null;
+		this.cachedBuildItems = new ArrayList<>();
 
 		this.round = new BRRound(this, 10, 40);
 		this.tick = 0;
@@ -135,6 +142,7 @@ public class BRActive {
 				return ActionResult.FAIL;
 			});
 			activity.listen(BlockPlaceEvent.BEFORE, (player, world1, pos, state, context) -> this.interactWithWorld(player, pos));
+			activity.listen(BlockPlaceEvent.AFTER, (player, world1, pos, state) -> this.checkFinished(player));
 			activity.listen(FluidPlaceEvent.EVENT, (world1, pos, player, hitResult) -> this.interactWithWorld(player, pos));
 			activity.listen(BlockPunchEvent.EVENT, this::punchBlock);
 			activity.listen(WorldBlockBreakEvent.EVENT, this::onBlockBroken);
@@ -190,41 +198,56 @@ public class BRActive {
 		var stateMinutes = (stateTotalTicks - stateTick) / 20 / 60;
 		var stateSeconds = (stateTotalTicks - stateTick) / 20 % 60;
 
-		// TODO: if build finished, then show a finished bar (green + different text)
+		for(var player : this.space.getPlayers()) {
+			var data = this.playerDataMap.get(player.getUuid());
 
-		for(var playerData : this.playerDataMap.values()) {
-			playerData.tick();
+			if(data != null) {
+				data.tick();
 
-			if(showCountdown) {
-				if(!playerData.bar.isVisible()) {
-					playerData.bar.setVisible(true);
-					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
+				if(!showCountdown) {
+					if(data.bar.isVisible()) {
+						data.bar.setVisible(false);
+					}
 				}
-				playerData.bar.setPercent(statePercent);
-			}
-			else {
-				if(playerData.bar.isVisible()) {
-					playerData.bar.setVisible(false);
-					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
-				}
-			}
-
-			if(stateTick % 20 == 0) {
-				if(showCountdown) {
-					playerData.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
-					if(stateSeconds > 5) {
-						playerData.bar.setColor(BossBar.Color.YELLOW);
+				else {
+					if(!data.bar.isVisible()) {
+						data.bar.setVisible(true);
+					}
+					if(data.score == this.maxScore) {
+						data.bar.setName(Text.translatable("bar.build_rush.perfect_build"));
+						data.bar.setColor(BossBar.Color.GREEN);
+						data.bar.setPercent(1);
 					}
 					else {
-						playerData.bar.setColor(BossBar.Color.RED);
-						//show title
+						data.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 
-						//TODO: show title
-						//TODO: play sound
+						if(stateTick % 20 == 0) {
+							if(stateSeconds == 0 && stateMinutes == 1) {
+								TitleUtil.sendSub(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
+								//TODO: play sound
+							}
+							if(stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
+								TitleUtil.sendSub(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
+								//TODO: play sound
+							}
+							if(stateSeconds >= 30) {
+								data.bar.setColor(BossBar.Color.GREEN);
+							}
+							else if(stateSeconds >= 15) {
+								data.bar.setColor(BossBar.Color.YELLOW);
+							}
+							else {
+								data.bar.setColor(BossBar.Color.RED);
+								TitleUtil.sendSub(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
+								//TODO: play sound
+							}
+						}
+						data.bar.setPercent(statePercent);
 					}
 				}
 			}
 		}
+
 		if(this.tick % 20 == 0) {
 			this.refreshSidebar();
 		}
@@ -253,7 +276,7 @@ public class BRActive {
 		}
 	}
 
-	public void canBuild(boolean canBuild) {
+	public void canInteract(boolean canBuild) {
 		this.canInteractWithWorld = canBuild;
 	}
 
@@ -297,28 +320,29 @@ public class BRActive {
 			}
 		}
 		if(data == null) {
-			if(player != null) {
-				BuildRush.LOGGER.error("Tried to eliminate player " + player.getName().getString() + " but they have no data!");
-			}
-			else {
-				BuildRush.LOGGER.error("Tried to eliminate a player but they left, and they have no data!");
-			}
+			BuildRush.LOGGER.error("Tried to eliminate a player but they have no data!");
 			return;
 		}
 		if(data.eliminated) {
-			if(player != null) {
-				BuildRush.LOGGER.error("Tried to eliminate player " + player.getName().getString() + " but they are already eliminated!");
-			}
-			else {
-				BuildRush.LOGGER.error("Tried to eliminate a player but they left, and they are already eliminated!");
-			}
+			BuildRush.LOGGER.error("Tried to eliminate a player but they are already eliminated!");
 			return;
 		}
+		float score = data.score / (float) this.maxScore;
+		data.score = 0;
 		data.eliminated = true;
 		this.removeAlivePlayerPlot(data);
+		//TODO: play breaking sound
 		if(player != null) {
 			this.resetPlayer(player, false);
-			this.space.getPlayers().sendMessage(Text.translatable("text.build_rush.eliminated", player.getName().getString()).formatted(Formatting.RED));
+			String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
+			for(var p : this.space.getPlayers()) {
+				if(p == player) continue;
+				p.sendMessage(Text.translatable("text.build_rush.eliminated", player.getName().getString(), scoreAsPercent).formatted(Formatting.RED));
+			}
+			player.sendMessage(Text.translatable("text.build_rush.eliminated.self", player.getName().getString()).formatted(Formatting.RED));
+			TitleUtil.clearSub(player);
+			TitleUtil.send(player, Text.translatable("title.build_rush.eliminated").formatted(Formatting.RED), 0, 5 * 20, 20);
+			//TODO: play sound
 		}
 		this.refreshSidebar();
 
@@ -348,7 +372,7 @@ public class BRActive {
 			if(data == null || data.eliminated) {
 				continue;
 			}
-			for(var stack : inventory) {
+			for(var stack : cachedBuildItems) {
 				this.give(player, stack, false);
 			}
 		}
@@ -365,7 +389,7 @@ public class BRActive {
 	}
 
 	public void giveBlock(PlayerEntity player, BlockPos pos) {
-		var stacks = PlotUtil.stacksForBlock(world, pos);
+		var stacks = BuildUtil.stacksForBlock(world, pos);
 		var firstStack = stacks.get(0);
 
 		this.give(player, firstStack, true);
@@ -398,9 +422,11 @@ public class BRActive {
 		if(giveToHand) {
 			var slot = player.getInventory().selectedSlot;
 			var oldStack = player.getInventory().getStack(slot);
-			player.getInventory().setStack(slot, stack.copy());
-			if(!oldStack.isEmpty()) {
-				player.giveItemStack(oldStack);
+			if(oldStack.isEmpty()) {
+				player.getInventory().setStack(slot, stack.copy());
+			}
+			else {
+				player.giveItemStack(stack.copy());
 			}
 		}
 		else {
@@ -440,6 +466,10 @@ public class BRActive {
 		}
 		if(!data.plot.contains(pos)) {
 			BuildRush.debug("interactWithWorld: block outside player's plot");
+			return false;
+		}
+		if(data.score == this.maxScore) {
+			BuildRush.debug("interactWithWorld: player has finished building");
 			return false;
 		}
 		return true;
@@ -489,7 +519,9 @@ public class BRActive {
 			var center = pos.toCenterPos();
 			var player = this.space.getPlayers().getEntity(uuid);
 
-			this.giveBlock(player, pos);
+			if(player != null) {
+				this.giveBlock(player, pos);
+			}
 			this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
 			this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
 			this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
@@ -505,12 +537,13 @@ public class BRActive {
 	}
 
 	private void removePlayer(ServerPlayerEntity player) {
-		var data = this.playerDataMap.remove(player.getUuid());
+		var data = this.playerDataMap.get(player.getUuid());
 		if(data != null) {
 			if(!data.eliminated && !this.isClosing()) {
 				this.eliminate(data);
 			}
 			data.leave(player);
+			this.playerDataMap.remove(player.getUuid());
 		}
 		this.globalSidebar.removePlayer(player);
 		this.refreshSidebar();
@@ -520,7 +553,7 @@ public class BRActive {
 	/*  UTILITY  */
 	/*===========*/
 
-	public void sendMessage(String text) {
+	public void sendDebugMessage(String text) {
 		this.space.getPlayers().sendMessage(Text.literal(text));
 	}
 
@@ -531,15 +564,14 @@ public class BRActive {
 			b.add(Text.translatable("sidebar.build_rush.round", this.round.getNumber()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
 			b.add(Text.empty());
 
-			if(this.currentPlotStructure != null) {
+			if(this.currentBuild != null) {
 				b.add(Text.translatable("sidebar.build_rush.build").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
-				b.add(this.currentPlotStructure.name().copy().setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
-				this.currentPlotStructure.author().ifPresent(author -> b.add((Text.literal("- ").append(Text.translatable("sidebar.build_rush.author", author.name()))).setStyle(Style.EMPTY.withColor(Formatting.GRAY))));
+				b.add(this.currentBuild.name().copy().setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
+				this.currentBuild.author().ifPresent(author -> b.add((Text.literal("- ").append(Text.translatable("sidebar.build_rush.author", author.name()))).setStyle(Style.EMPTY.withColor(Formatting.GRAY))));
 				b.add(Text.empty());
 			}
 
 			b.add(Text.translatable("sidebar.build_rush.players_left", this.getAliveDatas().size()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
-			b.add(Text.empty());
 		});
 	}
 
@@ -547,21 +579,21 @@ public class BRActive {
 		return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
 	}
 
-	public void pickPlotStructure() {
-		if(this.plotStructures.isEmpty()) {
-			this.plotStructures.addAll(this.usedPlotStructures);
-			this.usedPlotStructures.clear();
+	public void pickBuild() {
+		if(this.builds.isEmpty()) {
+			this.builds.addAll(this.usedBuilds);
+			this.usedBuilds.clear();
 		}
-		if(this.plotStructures.isEmpty()) {
-			throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.none.weird"));
+		if(this.builds.isEmpty()) {
+			throw new GameOpenException(Text.translatable("error.build_rush.build.none.weird"));
 		}
-		this.currentPlotStructure = this.plotStructures.get(this.world.random.nextInt(this.plotStructures.size()));
-		this.plotStructures.remove(this.currentPlotStructure);
-		this.usedPlotStructures.add(this.currentPlotStructure);
+		this.currentBuild = this.builds.get(this.world.random.nextInt(this.builds.size()));
+		this.builds.remove(this.currentBuild);
+		this.usedBuilds.add(this.currentBuild);
 		this.refreshSidebar();
 	}
 
-	public void resetAlivePlayers() {
+	public void resetPlayers() {
 		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
 			if(data != null && !data.eliminated) {
@@ -615,8 +647,8 @@ public class BRActive {
 
 	public void resetScores() {
 		this.maxScore = 0;
-		for(var pos : this.centerPlot) {
-			if(!this.world.getBlockState(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
+		for(var pos : this.cachedBuild.positions()) {
+			if(!this.cachedBuild.state(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
 				this.maxScore++;
 			}
 		}
@@ -629,19 +661,31 @@ public class BRActive {
 		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
 			if(data != null && !data.eliminated) {
-				float score = data.score / (float) this.maxScore;
-				String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
-				player.sendMessage(Text.translatable("text.build_rush.score", scoreAsPercent), false);
+				if(data.score == this.maxScore) {
+					TitleUtil.sendSub(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(Formatting.GREEN).withBold(true).withUnderline(true)), 0, 3 * 20, 10);
+					player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+				}
+				else {
+					float score = data.score / (float) this.maxScore;
+					String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
+					player.sendMessage(Text.translatable("text.build_rush.score", scoreAsPercent), false);
+					var color = score <= 0.25 ? Formatting.RED : score < 0.75 ? Formatting.YELLOW : Formatting.GREEN;
+					TitleUtil.sendSub(player,Text.translatable("title.build_rush.score", scoreAsPercent).setStyle(Style.EMPTY.withColor(color).withBold(true)), 0, 3 * 20, 10);
+				}
+				//TODO: sounds
 			}
 		}
 	}
 
-	// I cannot use this method yet because the center plot is not placed when I'd like to use it
 	public void checkFinished(ServerPlayerEntity player) {
 		var data = this.playerDataMap.get(player.getUuid());
 		if(data != null && !data.eliminated) {
-			player.sendMessage(Text.literal("You finished the plot!"), false);
-			data.score = this.maxScore;
+			int score = this.calcPlayerScore(data);
+			if(score == this.maxScore) {
+				data.score = this.maxScore;
+				//TODO: store and send time
+				player.sendMessage(Text.translatable("text.build_rush.finished"), false);
+			}
 		}
 	}
 
@@ -693,35 +737,65 @@ public class BRActive {
 		}
 	}
 
+	public void cacheBuild() {
+		int size = this.centerPlot.size().getX();
+		HashMap<Vec3i, BlockState> states = new HashMap<>();
+		HashMap<Vec3i, NbtCompound> nbt = new HashMap<>();
+		for(int x = 0; x <= size; x++) {
+			for(int y = 0; y <= size; y++) {
+				for(int z = 0; z <= size; z++) {
+					var targetPos = new BlockPos(x, y, z);
+					var sourcePos = this.centerPlot.min().add(x, y, z);
+
+					// state
+					states.put(targetPos, this.world.getBlockState(sourcePos));
+
+					// nbt
+					var sourceEntity = this.world.getBlockEntity(sourcePos);
+					if(sourceEntity != null) {
+						var sourceNbt = sourceEntity.createNbt();
+						nbt.put(targetPos, sourceNbt);
+					}
+				}
+			}
+		}
+		this.cachedBuild = new CachedBuild(states, nbt);
+	}
+
+	/**
+	 * This method requires the center plot to be placed. We need it to execute the pickBlock method correctly.
+	 */
 	public void calcInventory() {
-		this.inventory.clear();
+		this.cachedBuildItems.clear();
 		for(var pos : this.centerPlot) {
-			var stacks = PlotUtil.stacksForBlock(world, pos);
-			this.inventory.addAll(stacks);
+			var stacks = BuildUtil.stacksForBlock(world, pos);
+			this.cachedBuildItems.addAll(stacks);
 		}
 	}
 
 	public void calcPlayerScores() {
 		for(var aliveData : getAliveDatas()) {
-			aliveData.score = calcPlayerScore(aliveData);
+			if(aliveData.score != this.maxScore) {
+				// don't recalculate if the player already finished
+				aliveData.score = calcPlayerScore(aliveData);
+			}
 		}
 	}
 
 	public int calcPlayerScore(BRPlayerData playerData) {
 		int score = 0;
-		int size = this.centerPlot.size().getX();
-		for(int x = 0; x <= size; x++) {
-			for(int y = 0; y <= size; y++) {
-				for(int z = 0; z <= size; z++) {
-					var sourcePos = this.centerPlot.min().add(x, y, z);
-					var targetPos = playerData.plot.min().add(x, y, z);
-					if(this.world.getBlockState(sourcePos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
-						continue;
-					}
-					if(PlotUtil.areEqual(this.world, sourcePos, targetPos)) {
-						score++;
-					}
-				}
+		for(var pos : this.cachedBuild.positions()) {
+			var sourceState = this.cachedBuild.state(pos);
+			if(sourceState.isIn(BRTags.IGNORED_IN_COMPARISON)) {
+				continue;
+			}
+			var targetPos = playerData.plot.min().add(pos);
+			var targetState = this.world.getBlockState(targetPos);
+			var targetEntity = this.world.getBlockEntity(targetPos);
+			var sourceNbt = this.cachedBuild.nbt(pos);
+			var targetNbt = targetEntity != null ? targetEntity.createNbt() : null;
+			if(BuildUtil.areEqual(sourceState, sourceNbt, targetState, targetNbt)) {
+				score++;
 			}
 		}
 		return score;
@@ -746,10 +820,10 @@ public class BRActive {
 		}
 	}
 
-	public void placeAlivePlayerPlots() {
+	public void placePlayerBuilds() {
 		var aliveDatas = getAliveDatas();
 
-		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		for(var aliveData : aliveDatas) {
 			this.world.playSound(null, BlockPos.ofFloored(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
@@ -774,7 +848,7 @@ public class BRActive {
 		}
 	}
 
-	public void placeAlivePlayerPlotGrounds() {
+	public void placePlayerBuildGrounds() {
 		var aliveDatas = getAliveDatas();
 
 		for(var aliveData : aliveDatas) {
@@ -783,7 +857,7 @@ public class BRActive {
 		}
 	}
 
-	public void removeAlivePlayerPlots() {
+	public void removePlayerBuilds() {
 		var aliveDatas = getAliveDatas();
 		for(var aliveData : aliveDatas) {
 			this.removeAlivePlayerPlot(aliveData);
@@ -797,9 +871,9 @@ public class BRActive {
 		}
 	}
 
-	public void placeCenterPlot() {
+	public void placeCenterBuild() {
 		var plotPos = this.centerPlot.min();
-		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentPlotStructure.id()).orElseThrow();
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.id()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();
@@ -809,12 +883,12 @@ public class BRActive {
 		this.calcInventory();
 	}
 
-	public void placeCenterPlotGround() {
+	public void placeCenterBuildGround() {
 		var plotPos = this.centerPlot.min().down();
 		this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 	}
 
-	public void removeCenterPlot() {
+	public void removeCenterBuild() {
 		this.world.playSound(null, BlockPos.ofFloored(this.centerPlot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 		for(var pos : this.centerPlot) {
 			this.removeBlock(pos);

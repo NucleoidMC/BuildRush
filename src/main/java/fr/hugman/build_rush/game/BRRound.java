@@ -66,48 +66,47 @@ public class BRRound {
 			// execute state
 			switch(this.state) {
 				case MEMORIZE_START -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("memorize_start");
-					this.active.removeAlivePlayerPlots();
-					this.active.removeCenterPlot();
-					this.active.placeAlivePlayerPlotGrounds();
-					this.active.placeCenterPlotGround();
-					this.active.resetAlivePlayers();
-					this.active.pickPlotStructure();
-					this.active.placeCenterPlot();
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("memorize_start");
+					this.active.removePlayerBuilds();
+					this.active.removeCenterBuild();
+					this.active.placePlayerBuildGrounds();
+					this.active.placeCenterBuildGround();
+					this.active.resetPlayers();
+					this.active.pickBuild();
+					this.active.placeCenterBuild();
+					this.active.cacheBuild();
 					this.active.resetScores();
 				}
 				case MEMORIZE -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("memorize");
-					this.active.placeAlivePlayerPlots();
-					this.active.removeCenterPlot();
-					this.active.placeCenterPlotGround();
-					// TODO: bossbar countdown
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("memorize");
+					this.active.placePlayerBuilds();
+					this.active.removeCenterBuild();
+					this.active.placeCenterBuildGround();
 				}
 				case BUILD -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("build");
-					this.active.removeAlivePlayerPlots();
-					this.active.canBuild(true);
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("build");
+					this.active.removePlayerBuilds();
+					this.active.canInteract(true);
 					this.active.giveInventory();
-					// TODO: bossbar countdown
 				}
 				case BUILD_END -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("build_end");
-					this.active.canBuild(false);
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("build_end");
+					this.active.canInteract(false);
 					this.active.clearInventory();
 				}
 				case ELIMINATION_START -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("elimination_start");
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("elimination_start");
 					// In OG game the elder guardian would start spinning here
-					this.active.placeCenterPlot();
+					this.active.placeCenterBuild();
 					this.active.calcPlayerScores();
 					this.active.sendScores();
 				}
 				case ELIMINATION -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("elimination");
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("elimination");
 					this.active.eliminateLast();
 				}
 				case END -> {
-					if(BuildRush.DEBUG) this.active.sendMessage("end");
+					if(BuildRush.DEBUG) this.active.sendDebugMessage("end");
 					// TODO: send round results
 				}
 			}

@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/red_orb",
+  "name": {
+    "translate": "build.red_orb"
+  },
+  "author": {
+    "name": "Geefire",
+    "uuid": "c40d10d3-f2ee-47a6-92ec-63b53b6fdf01"
+  }
+}

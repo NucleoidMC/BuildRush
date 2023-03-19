@@ -17,7 +17,7 @@
     "platform_plot_offset": [9, 46, 10],
     "platform_spacing": 5
   },
-  "structures": [
+  "builds": [
     "build_rush:a_very_serious_guy",
     "build_rush:amethyst_geode",
     "build_rush:ancient_city",

@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/ancient_monument",
+  "name": {
+    "translate": "build.ancient_monument"
+  },
+  "author": {
+    "name": "moehreag",
+    "uuid": "6392bacb-8b00-4366-82b3-3ddb134e83ac"
+  }
+}

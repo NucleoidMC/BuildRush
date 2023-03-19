@@ -17,7 +17,7 @@
     "platform_plot_offset": [1, 1, 1],
     "platform_spacing": 6
   },
-  "structures": [
+  "builds": [
     "build_rush:flags/signal/alpha",
     "build_rush:flags/signal/answer",
     "build_rush:flags/signal/bravo",

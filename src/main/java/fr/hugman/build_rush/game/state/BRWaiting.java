@@ -1,7 +1,7 @@
 package fr.hugman.build_rush.game.state;
 
 import fr.hugman.build_rush.BRConfig;
-import fr.hugman.build_rush.plot.PlotStructure;
+import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.registry.BRRegistries;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -64,14 +64,14 @@ public class BRWaiting {
 				var platform = templateManager.getTemplate(config.map().platform()).orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.platform.not_found", config.map().platform())));
 				var plotGround = templateManager.getTemplate(config.map().plotGround()).orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.plot_ground.not_found", config.map().plotGround())));
 				if(plotGround.getSize().getX() != plotGround.getSize().getZ()) {
-					throw new GameOpenException(Text.translatable("error.build_rush.plot_ground.invalid_width_length", plotGround.getSize().getX(), plotGround.getSize().getZ()));
+					throw new GameOpenException(Text.translatable("error.build_rush.build_ground.invalid_width_length", plotGround.getSize().getX(), plotGround.getSize().getZ()));
 				}
 				if(plotGround.getSize().getY() != 1) {
-					throw new GameOpenException(Text.translatable("error.build_rush.plot_ground.invalid_height", plotGround.getSize().getY()));
+					throw new GameOpenException(Text.translatable("error.build_rush.build_ground.invalid_height", plotGround.getSize().getY()));
 				}
-				int plotSize = plotGround.getSize().getX();
-				var plotStructures = getPlotStructures(plotSize, config, templateManager);
-				var centerPlot = getCenterPlot(centerRegion, config.map().centerPlotOffset(), plotSize);
+				int buildSize = plotGround.getSize().getX();
+				var builds = getBuilds(buildSize, config, templateManager);
+				var centerPlot = getCenterPlot(centerRegion, config.map().centerPlotOffset(), buildSize);
 				var spawnPos = BlockPos.ofFloored(centerBounds.center());
 
 				activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
@@ -88,7 +88,7 @@ public class BRWaiting {
 				activity.listen(GamePlayerEvents.OFFER, offer -> offer.accept(world, centerBounds.center().withAxis(Direction.Axis.Y, world.getTopY())).and(() -> resetPlayer(offer.player(), world, spawnPos)));
 
 				activity.listen(GameActivityEvents.REQUEST_START, () -> {
-					var active = new BRActive(config, activity.getGameSpace(), world, centerBounds, centerPlot, platform, plotGround, plotStructures);
+					var active = new BRActive(config, activity.getGameSpace(), world, centerBounds, centerPlot, platform, plotGround, builds);
 					return active.transferActivity();
 				});
 			});
@@ -120,28 +120,28 @@ public class BRWaiting {
 	}
 
 
-	public static List<PlotStructure> getPlotStructures(int plotSize, BRConfig config, StructureTemplateManager manager) {
-		List<PlotStructure> plotStructures = new ArrayList<>();
-		for(Identifier plot : config.plotStructures()) {
+	public static List<Build> getBuilds(int buildSize, BRConfig config, StructureTemplateManager manager) {
+		List<Build> builds = new ArrayList<>();
+		for(Identifier buildId : config.builds()) {
 			// Get the plot structure
-			var plotStructure = BRRegistries.PLOT_STRUCTURE.get(plot);
+			var build = BRRegistries.BUILD.get(buildId);
 
-			if(plotStructure == null) {
-				throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.not_found", plot.toString()));
+			if(build == null) {
+				throw new GameOpenException(Text.translatable("error.build_rush.build.not_found", buildId.toString()));
 			}
 
 			// Verify that the structure is here and is of the correct size
-			var structure = manager.getTemplate(plotStructure.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", plotStructure.toString())));
-			if(structure.getSize().getX() != plotSize ||
-					structure.getSize().getZ() != plotSize ||
-					structure.getSize().getY() < plotSize || structure.getSize().getY() > plotSize + 1) {
-				throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.invalid_size", plot.toString(), structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ(), plotSize, plotSize, plotSize, plotSize, plotSize, plotSize));
+			var structure = manager.getTemplate(build.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", build.toString())));
+			if(structure.getSize().getX() != buildSize ||
+					structure.getSize().getZ() != buildSize ||
+					structure.getSize().getY() < buildSize || structure.getSize().getY() > buildSize + 1) {
+				throw new GameOpenException(Text.translatable("error.build_rush.build.invalid_size", buildId.toString(), structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ(), buildSize, buildSize, buildSize, buildSize, buildSize, buildSize));
 			}
-			plotStructures.add(plotStructure);
+			builds.add(build);
 		}
-		if(plotStructures.size() == 0) {
-			throw new GameOpenException(Text.translatable("error.build_rush.plot_structure.none"));
+		if(builds.size() == 0) {
+			throw new GameOpenException(Text.translatable("error.build_rush.build.none"));
 		}
-		return plotStructures;
+		return builds;
 	}
 }

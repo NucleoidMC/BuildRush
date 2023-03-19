@@ -1,12 +1,12 @@
 package fr.hugman.build_rush.registry;
 
 import fr.hugman.build_rush.BuildRush;
-import fr.hugman.build_rush.plot.PlotStructure;
+import fr.hugman.build_rush.build.Build;
 
 public class BRRegistries {
-	public static final ReloadableResourceManager<PlotStructure> PLOT_STRUCTURE = ReloadableResourceManager.of(PlotStructure.CODEC, "plot_structures");
+	public static final ReloadableResourceManager<Build> BUILD = ReloadableResourceManager.of(Build.CODEC, "builds");
 
 	public static void register() {
-		PLOT_STRUCTURE.register(BuildRush.id("plot_structure"));
+		BUILD.register(BuildRush.id("plot_structure"));
 	}
 }

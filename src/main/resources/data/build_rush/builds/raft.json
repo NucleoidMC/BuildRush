@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/raft",
+  "name": {
+    "translate": "build.raft"
+  },
+  "author": {
+    "name": "moehreag",
+    "uuid": "6392bacb-8b00-4366-82b3-3ddb134e83ac"
+  }
+}

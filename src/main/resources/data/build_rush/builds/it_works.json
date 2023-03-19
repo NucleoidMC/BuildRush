@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/it_works",
+  "name": {
+    "translate": "build.it_works"
+  },
+  "author": {
+    "name": "Napero",
+    "uuid": "0529de78-7795-4382-ba3c-350fe3159cc3"
+  }
+}
