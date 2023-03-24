@@ -165,5 +165,6 @@
     "text.build_rush.finished": "Постройка воссоздана полностью правильно!",
     "title.build_rush.perfect": "Идеально!",
     "bar.build_rush.perfect_build": "Идеальная постройка!",
-    "error.build_rush.build.invalid_size": "Постройка «%s» имеет недопустимый размер (текущий — %d, %d, %d; ожидаемый — %d, %d, %d или %d, %d, %d)"
+    "error.build_rush.build.invalid_size": "Постройка «%s» имеет недопустимый размер (текущий — %d, %d, %d; ожидаемый — %d, %d, %d или %d, %d, %d)",
+    "text.build_rush.win.self": "Вы победили спустя %d раундов!"
 }
