@@ -1,6 +1,5 @@
 package fr.hugman.build_rush.game;
 
-import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.game.state.BRActive;
 
 public class BRRound {
@@ -66,7 +65,6 @@ public class BRRound {
 			// execute state
 			switch(this.state) {
 				case MEMORIZE_START -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("memorize_start");
 					this.active.removePlayerBuilds();
 					this.active.removeCenterBuild();
 					this.active.placePlayerBuildGrounds();
@@ -78,36 +76,30 @@ public class BRRound {
 					this.active.resetScores();
 				}
 				case MEMORIZE -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("memorize");
 					this.active.placePlayerBuilds();
 					this.active.removeCenterBuild();
 					this.active.placeCenterBuildGround();
 				}
 				case BUILD -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("build");
 					this.active.removePlayerBuilds();
 					this.active.canInteract(true);
 					this.active.giveInventory();
 				}
 				case BUILD_END -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("build_end");
 					this.active.canInteract(false);
 					this.active.clearInventory();
 				}
 				case ELIMINATION_START -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("elimination_start");
 					// In OG game the elder guardian would start spinning here
-					this.active.placeCenterBuild();
 					this.active.calcPlayerScores();
 					this.active.sendScores();
+					// TODO: spawn a judge
 				}
 				case ELIMINATION -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("elimination");
 					this.active.eliminateLast();
 				}
 				case END -> {
-					if(BuildRush.DEBUG) this.active.sendDebugMessage("end");
-					// TODO: send round results
+					// TODO: send round results?
 				}
 			}
 		}

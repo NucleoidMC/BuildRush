@@ -13,6 +13,7 @@
   "text.build_rush.finished": "You got the entire build correctly!",
   "text.build_rush.no_elimination": "Congratulations! Nobody was eliminated!",
   "text.build_rush.win": "%s won after %d rounds!",
+  "text.build_rush.win.self": "You won after %d rounds!",
   "text.build_rush.win.unknown": "Someone won after %d rounds... But we don't know who? (please contact the game author)",
 
   "title.build_rush.perfect": "Perfect!",
