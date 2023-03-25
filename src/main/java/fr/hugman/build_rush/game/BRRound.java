@@ -4,13 +4,13 @@ import fr.hugman.build_rush.game.state.BRActive;
 import net.minecraft.util.math.MathHelper;
 
 public class BRRound {
-	public static final int MEMORIZE_START    = 0;
-	public static final int MEMORIZE          = 1;
-	public static final int BUILD             = 2;
-	public static final int BUILD_END         = 3;
+	public static final int MEMORIZE_START = 0;
+	public static final int MEMORIZE = 1;
+	public static final int BUILD = 2;
+	public static final int BUILD_END = 3;
 	public static final int ELIMINATION_START = 4;
-	public static final int ELIMINATION       = 5;
-	public static final int END               = 6;
+	public static final int ELIMINATION = 5;
+	public static final int END = 6;
 
 	private final BRActive active;
 	private int number;
@@ -70,6 +70,7 @@ public class BRRound {
 			}
 
 			// execute state
+			var currentLength = this.lenghts[this.state];
 			switch(this.state) {
 				case MEMORIZE_START -> {
 					this.active.removePlayerBuilds();
@@ -95,20 +96,20 @@ public class BRRound {
 				case BUILD_END -> {
 					this.active.canInteract(false);
 					this.active.clearInventory();
+					this.active.spawnJudge();
 				}
 				case ELIMINATION_START -> {
 					this.active.calcPlayerScores();
 					this.active.sendScores();
-					// In OG game the elder guardian would start spinning here
-					// TODO: judge spawn + idle animation
+					this.active.rotateJudge(currentLength);
 				}
 				case ELIMINATION -> {
 					this.active.eliminateLast();
-					// TODO: judge elimination animation
+					this.active.elimJudge(currentLength);
 				}
 				case END -> {
 					// TODO: send round results?
-					// TODO: judge end animation
+					this.active.endJudge(currentLength);
 				}
 			}
 		}

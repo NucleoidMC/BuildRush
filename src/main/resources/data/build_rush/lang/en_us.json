@@ -7,9 +7,11 @@
 
   "map.build_rush.rock_candy_mines": "Rock-Candy Mines",
 
-  "text.build_rush.eliminated": "%s has been eliminated! They got a %s%% percent correct build.",
+  "generic.build_rush.score": "%d%%",
+
+  "text.build_rush.eliminated": "%s has been eliminated! They got a %s percent correct build.",
   "text.build_rush.eliminated.self": "You have been eliminated!",
-  "text.build_rush.score": "You got a %s%% correct build!",
+  "text.build_rush.score": "You got a %s correct build!",
   "text.build_rush.finished": "You got the entire build correctly!",
   "text.build_rush.no_elimination": "Congratulations! Nobody was eliminated!",
   "text.build_rush.win": "%s won after %d rounds!",
@@ -17,7 +19,6 @@
   "text.build_rush.win.unknown": "Someone won after %d rounds... But we don't know who? (please contact the game author)",
 
   "title.build_rush.perfect": "Perfect!",
-  "title.build_rush.score": "%d%%",
   "title.build_rush.eliminated": "Eliminated!",
 
   "sidebar.build_rush.build": "Build",

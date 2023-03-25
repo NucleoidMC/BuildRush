@@ -1,5 +1,9 @@
 package fr.hugman.build_rush.game.state;
 
+import eu.pb4.polymer.virtualentity.api.ElementHolder;
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
+import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
+import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
@@ -17,6 +21,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -43,6 +48,7 @@ import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenException;
@@ -78,12 +84,16 @@ public class BRActive {
 	private CachedBuild cachedBuild;
 	private final List<ItemStack> cachedBuildItems;
 	private int maxScore;
+	private UUID lastPlayerUuid;
 
 	private long tick;
 	private long closeTick;
 	private final BRRound round;
 	public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 	private boolean canInteractWithWorld;
+
+	private final ElementHolder judgeHolder;
+	private BlockDisplayElement judgeElement;
 
 	public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<Build> builds) {
 		this.config = config;
@@ -104,6 +114,9 @@ public class BRActive {
 		this.tick = 0;
 		this.closeTick = Long.MAX_VALUE;
 		this.canInteractWithWorld = false;
+
+		this.judgeHolder = new ElementHolder();
+		ChunkAttachment.of(this.judgeHolder, world, this.centerPlot.center());
 	}
 
 	public GameResult transferActivity() {
@@ -193,8 +206,9 @@ public class BRActive {
 		var stateTotalTicks = this.round.getLength(this.round.getState());
 		var statePercent = (float) stateTick / stateTotalTicks;
 
-		var stateMinutes = (stateTotalTicks - stateTick) / 20 / 60;
-		var stateSeconds = (stateTotalTicks - stateTick) / 20 % 60;
+		var stateTicksLeft = stateTotalTicks - stateTick;
+		var stateMinutes = stateTicksLeft / 20 / 60;
+		var stateSeconds = stateTicksLeft / 20 % 60;
 
 		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
@@ -219,27 +233,29 @@ public class BRActive {
 					else {
 						data.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 
-						if(stateTick % 20 == 0) {
-							if(stateSeconds >= 30) {
-								data.bar.setColor(BossBar.Color.GREEN);
+						if(stateTicksLeft % 20 == 0) {
+							if(stateMinutes == 0) {
+								if(stateSeconds >= 30) {
+									data.bar.setColor(BossBar.Color.GREEN);
+								}
+								else if(stateSeconds >= 15) {
+									data.bar.setColor(BossBar.Color.YELLOW);
+								}
+								else if(stateSeconds <= 10) {
+									data.bar.setColor(BossBar.Color.RED);
+								}
+								if(stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
+									TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
+									player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.3f);
+								}
+								if(stateSeconds <= 5) {
+									TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
+									player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.6f);
+								}
 							}
-							else if(stateSeconds >= 15) {
-								data.bar.setColor(BossBar.Color.YELLOW);
-							}
-							else if(stateSeconds <= 10) {
-								data.bar.setColor(BossBar.Color.RED);
-							}
-							if(stateSeconds == 0 && stateMinutes == 1) {
+							if(stateSeconds == 0 && (stateMinutes == 1 || stateMinutes == 2)) {
 								TextUtil.sendSubtitle(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
 								player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1);
-							}
-							if(stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
-								TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
-								player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.3f);
-							}
-							if(stateSeconds <= 5) {
-								TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
-								player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.6f);
 							}
 						}
 						data.bar.setPercent(statePercent);
@@ -281,29 +297,19 @@ public class BRActive {
 	}
 
 	public void eliminateLast() {
-		int fewestScore = Integer.MAX_VALUE;
-		UUID uuid = null;
-		for(var u : this.playerDataMap.keySet()) {
-			var d = this.playerDataMap.get(u);
-			if(d != null && !d.eliminated && d.score <= fewestScore) {
-				fewestScore = d.score;
-				uuid = u;
-			}
-		}
-		if(uuid == null) {
-			BuildRush.LOGGER.error("Tried to eliminate last player but no players were found!");
-			return;
-		}
-		if(fewestScore == this.maxScore) {
+		int result = this.calcLastPlayer();
+		if(result == 2) {
 			this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
 			this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
 		}
-		else {
-			if(!this.playerDataMap.containsKey(uuid)) {
+		else if(result == 1) {
+			var lastPlayerData = this.playerDataMap.get(this.lastPlayerUuid);
+			if(lastPlayerData == null) {
 				BuildRush.LOGGER.error("Tried to eliminate last player but the player's data was not found!");
 				return;
 			}
-			this.eliminate(this.playerDataMap.get(uuid));
+			this.eliminate(lastPlayerData);
+			this.lastPlayerUuid = null;
 		}
 	}
 
@@ -562,10 +568,6 @@ public class BRActive {
 	/*  UTILITY  */
 	/*===========*/
 
-	public void sendDebugMessage(String text) {
-		this.space.getPlayers().sendMessage(Text.literal(text));
-	}
-
 	public void refreshSidebar() {
 		this.globalSidebar.setTitle(Text.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true)));
 
@@ -667,6 +669,7 @@ public class BRActive {
 		}
 		for(var aliveData : getAliveDatas()) {
 			aliveData.score = 0;
+			aliveData.buildNameElement.setText(Text.empty());
 		}
 	}
 
@@ -680,10 +683,13 @@ public class BRActive {
 				}
 				else {
 					float score = data.score / (float) this.maxScore;
+					var color = player.getUuid().equals(this.lastPlayerUuid) ? TextUtil.DANGER : score < 0.5f ? TextUtil.MEDIUM : TextUtil.SUCCESS;
 					String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
-					player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.SUCCESS, "text.build_rush.score", scoreAsPercent), false);
-					var color = score <= 0.25 ? Formatting.RED : score < 0.75 ? Formatting.YELLOW : Formatting.GREEN;
-					TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.score", scoreAsPercent).setStyle(Style.EMPTY.withColor(color).withBold(true)), 0, 3 * 20, 10);
+					var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent).setStyle(Style.EMPTY.withColor(color).withBold(true));
+
+					player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
+					TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
+					data.buildNameElement.setText(scoreText);
 					player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
 				}
 			}
@@ -701,6 +707,7 @@ public class BRActive {
 				player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
 			}
 		}
+		this.calcLastPlayer();
 
 		// If all players have finished, skip the round
 		for(var aliveData : getAliveDatas()) {
@@ -798,10 +805,11 @@ public class BRActive {
 	public void calcPlayerScores() {
 		for(var aliveData : getAliveDatas()) {
 			if(aliveData.score != this.maxScore) {
-				// don't recalculate if the player already finished
+				// don't recalculate if the player already finished, just in case
 				aliveData.score = calcPlayerScore(aliveData);
 			}
 		}
+		this.calcLastPlayer();
 	}
 
 	public int calcPlayerScore(BRPlayerData playerData) {
@@ -823,6 +831,33 @@ public class BRActive {
 		return score;
 	}
 
+	/**
+	 * @return 0 if there is an error, 1 if there is a last player, 2 if there is no last player (everyone got perfect)
+	 */
+	public int calcLastPlayer() {
+		int fewestScore = Integer.MAX_VALUE;
+		UUID uuid = null;
+		for(var u : this.playerDataMap.keySet()) {
+			var d = this.playerDataMap.get(u);
+			if(d != null && !d.eliminated && d.score <= fewestScore) {
+				fewestScore = d.score;
+				uuid = u;
+			}
+		}
+		if(fewestScore == this.maxScore) {
+			//TODO: check for time
+			lastPlayerUuid = null;
+			return 2;
+		}
+		if(uuid == null) {
+			BuildRush.LOGGER.error("Tried to eliminate last player but no players were found!");
+			lastPlayerUuid = null;
+			return 0;
+		}
+		lastPlayerUuid = uuid;
+		return 1;
+	}
+
 	/* ================= */
 	/*   Plot Placement  */
 	/* ================= */
@@ -839,6 +874,13 @@ public class BRActive {
 					world.setBlockState(pos, Blocks.BARRIER.getDefaultState());
 				}
 			});
+			if(aliveData.buildNameHolder == null) {
+				aliveData.buildNameHolder = new ElementHolder();
+				ChunkAttachment.of(aliveData.buildNameHolder, world, aliveData.plot.centerTop().add(0, 1, 0));
+				aliveData.buildNameElement = new TextDisplayElement();
+				aliveData.buildNameElement.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
+				aliveData.buildNameHolder.addElement(aliveData.buildNameElement);
+			}
 		}
 	}
 
@@ -854,6 +896,7 @@ public class BRActive {
 				plotPos = plotPos.down();
 			}
 			structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+			aliveData.buildNameElement.setText(this.currentBuild.name());
 		}
 
 		// if the player is inside a block, teleport them on top
@@ -895,6 +938,7 @@ public class BRActive {
 		for(var pos : data.plot) {
 			this.removeBlock(pos);
 		}
+		data.buildNameElement.setText(Text.empty());
 	}
 
 	public void placeCenterBuild() {
@@ -919,5 +963,45 @@ public class BRActive {
 		for(var pos : this.centerPlot) {
 			this.removeBlock(pos);
 		}
+	}
+
+	/* =================== */
+	/*  Judge Controllers  */
+	/* =================== */
+
+	public void spawnJudge() {
+		this.judgeElement = new BlockDisplayElement(Blocks.SHROOMLIGHT.getDefaultState());
+		for(var element : this.judgeHolder.getElements()) {
+			this.judgeHolder.removeElement(element);
+		}
+		this.judgeHolder.addElement(this.judgeElement);
+	}
+
+	public void rotateJudge(int duration) {
+		Quaternionf rotation = new Quaternionf();
+		rotation.rotateAxis((float) Math.toRadians(180), 0, 1, 0);
+		this.judgeElement.setRightRotation(rotation);
+		this.judgeElement.setInterpolationDuration(duration);
+		this.judgeElement.startInterpolation();
+	}
+
+	public void elimJudge(int duration) {
+		var lastPlayerData = this.playerDataMap.get(this.lastPlayerUuid);
+		if(lastPlayerData == null) {
+			//TODO: fallback anim?
+			return;
+		}
+		lastPlayerData.buildNameElement.setText(Text.empty());
+		this.judgeElement.setTranslation(lastPlayerData.plot.center().subtract(this.judgeHolder.getPos()).toVector3f());
+		this.judgeElement.setScale(lastPlayerData.plot.size().toCenterPos().toVector3f());
+		this.judgeElement.setInterpolationDuration(duration);
+		this.judgeElement.startInterpolation();
+	}
+
+	public void endJudge(int duration) {
+		for(var element : this.judgeHolder.getElements()) {
+			this.judgeHolder.removeElement(element);
+		}
+		this.judgeElement = null;
 	}
 }

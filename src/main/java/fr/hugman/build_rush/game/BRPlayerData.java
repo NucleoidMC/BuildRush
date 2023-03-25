@@ -1,5 +1,7 @@
 package fr.hugman.build_rush.game;
 
+import eu.pb4.polymer.virtualentity.api.ElementHolder;
+import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,6 +19,9 @@ public class BRPlayerData {
 	public int score = 0;
 
 	public final ServerBossBar bar;
+
+	public ElementHolder buildNameHolder;
+	public TextDisplayElement buildNameElement;
 
 	public BRPlayerData() {
 		this.bar = new ServerBossBar(DEFAULT_BAR_TITLE, BossBar.Color.YELLOW, BossBar.Style.PROGRESS);

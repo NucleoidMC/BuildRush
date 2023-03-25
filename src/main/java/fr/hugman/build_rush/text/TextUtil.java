@@ -9,16 +9,18 @@ import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 
 public class TextUtil {
-	public static final int NEUTRAL = 0xe0e0e0;
-	public static final int NEUTRAL_S = 0xb8b8b8;
+	public static final int NEUTRAL = 0xadadad;
+	public static final int NEUTRAL_S = 0x7d7d7d;
 	public static final int DANGER = 0xf54949;
 	public static final int DANGER_S = 0xbf1b1b;
-	public static final int SUCCESS = 0x4ff790;
-	public static final int SUCCESS_S = 0x1bbf5a;
-	public static final int EPIC = 0xea4bf2;
-	public static final int EPIC_S = 0xb119bf;
-	public static final int LEGENDARY = 0xfffa5e;
-	public static final int LEGENDARY_S = 0xd9bd1e;
+	public static final int MEDIUM = 0xe3f23d;
+	public static final int MEDIUM_S = 0xd6cc13;
+	public static final int SUCCESS = 0x5cf277;
+	public static final int SUCCESS_S = 0x1bc239;
+	public static final int EPIC = 0xef73f5;
+	public static final int EPIC_S = 0xe624f0;
+	public static final int LEGENDARY = 0xface3e;
+	public static final int LEGENDARY_S = 0xd9a107;
 
 	public static final String DASH = "»";
 	public static final String SKULL = "☠";
@@ -91,6 +93,7 @@ public class TextUtil {
 		return switch(color) {
 			case NEUTRAL -> NEUTRAL_S;
 			case DANGER -> DANGER_S;
+			case MEDIUM -> MEDIUM_S;
 			case SUCCESS -> SUCCESS_S;
 			case EPIC -> EPIC_S;
 			case LEGENDARY -> LEGENDARY_S;
