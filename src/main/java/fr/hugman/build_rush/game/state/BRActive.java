@@ -701,6 +701,14 @@ public class BRActive {
 				player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
 			}
 		}
+
+		// If all players have finished, skip the round
+		for(var aliveData : getAliveDatas()) {
+			if(aliveData.score != this.maxScore) {
+				return;
+			}
+		}
+		this.round.skip();
 	}
 
 

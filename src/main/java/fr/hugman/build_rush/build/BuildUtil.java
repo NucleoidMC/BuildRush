@@ -111,7 +111,6 @@ public class BuildUtil {
 		return 1;
 	}
 
-
 	public static int getBuildComplexity(CachedBuild build) {
 		int complexity = 0;
 		var blockList = new ArrayList<Block>();

@@ -97,18 +97,24 @@ public class BRRound {
 					this.active.clearInventory();
 				}
 				case ELIMINATION_START -> {
-					// In OG game the elder guardian would start spinning here
 					this.active.calcPlayerScores();
 					this.active.sendScores();
-					// TODO: spawn a judge
+					// In OG game the elder guardian would start spinning here
+					// TODO: judge spawn + idle animation
 				}
 				case ELIMINATION -> {
 					this.active.eliminateLast();
+					// TODO: judge elimination animation
 				}
 				case END -> {
 					// TODO: send round results?
+					// TODO: judge end animation
 				}
 			}
 		}
+	}
+
+	public void skip() {
+		this.stateTick = this.lenghts[this.state];
 	}
 }
