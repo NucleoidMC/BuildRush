@@ -1,6 +1,7 @@
 package fr.hugman.build_rush.build;
 
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.enums.SlabType;
@@ -91,6 +92,41 @@ public class BuildUtil {
 			}
 		}
 		return stacks;
+	}
+
+	public static int getStateComplexity(BlockState state) {
+		var block = state.getBlock();
+		if(state.isAir())
+			return 0;
+		if(block instanceof StairsBlock)
+			return 2;
+		if(block instanceof ButtonBlock)
+			return 2;
+		if(block instanceof ChainBlock)
+			return 2;
+		if(block instanceof VineBlock)
+			return 3;
+		if(block instanceof MultifaceGrowthBlock)
+			return 3;
+		return 1;
+	}
+
+
+	public static int getBuildComplexity(CachedBuild build) {
+		int complexity = 0;
+		var blockList = new ArrayList<Block>();
+		for(var pos : build.positions()) {
+			var state = build.state(pos);
+			if(state.isIn(BRTags.IGNORED_IN_COMPARISON)) {
+				continue;
+			}
+			complexity += BuildUtil.getStateComplexity(state);
+			if(!blockList.contains(state.getBlock())) {
+				blockList.add(state.getBlock());
+				complexity += 2;
+			}
+		}
+		return complexity;
 	}
 
 	public static void addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {

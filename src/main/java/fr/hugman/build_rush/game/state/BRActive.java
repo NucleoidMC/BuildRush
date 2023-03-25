@@ -331,7 +331,8 @@ public class BRActive {
 		float score = data.score / (float) this.maxScore;
 		data.score = 0;
 		data.eliminated = true;
-		this.removeAlivePlayerPlot(data);
+		this.removePlayerPlot(data);
+		this.placePlayerPlotGround(data);
 		//TODO: play breaking sound
 		if(player != null) {
 			this.resetPlayer(player, false);
@@ -601,6 +602,10 @@ public class BRActive {
 		this.refreshSidebar();
 	}
 
+	public void setTimes() {
+		this.round.setTimes(BuildUtil.getBuildComplexity(this.cachedBuild));
+	}
+
 	public void resetPlayers() {
 		for(var player : this.space.getPlayers()) {
 			var data = this.playerDataMap.get(player.getUuid());
@@ -857,23 +862,27 @@ public class BRActive {
 		}
 	}
 
-	public void placePlayerBuildGrounds() {
+	public void placePlayerPlotGrounds() {
 		var aliveDatas = getAliveDatas();
 
 		for(var aliveData : aliveDatas) {
-			var plotPos = aliveData.plot.min().down();
-			this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
+			placePlayerPlotGround(aliveData);
 		}
+	}
+
+	public void placePlayerPlotGround(BRPlayerData data) {
+		var plotPos = data.plot.min().down();
+		this.plotGround.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 	}
 
 	public void removePlayerBuilds() {
 		var aliveDatas = getAliveDatas();
 		for(var aliveData : aliveDatas) {
-			this.removeAlivePlayerPlot(aliveData);
+			this.removePlayerPlot(aliveData);
 		}
 	}
 
-	public void removeAlivePlayerPlot(BRPlayerData data) {
+	public void removePlayerPlot(BRPlayerData data) {
 		this.world.playSound(null, BlockPos.ofFloored(data.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 1.1f);
 		for(var pos : data.plot) {
 			this.removeBlock(pos);

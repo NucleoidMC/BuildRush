@@ -7,6 +7,6 @@ public class BRRegistries {
 	public static final ReloadableResourceManager<Build> BUILD = ReloadableResourceManager.of(Build.CODEC, "builds");
 
 	public static void register() {
-		BUILD.register(BuildRush.id("plot_structure"));
+		BUILD.register(BuildRush.id("build"));
 	}
 }

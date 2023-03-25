@@ -1,6 +1,7 @@
 package fr.hugman.build_rush.game;
 
 import fr.hugman.build_rush.game.state.BRActive;
+import net.minecraft.util.math.MathHelper;
 
 public class BRRound {
 	public static final int MEMORIZE_START    = 0;
@@ -49,6 +50,12 @@ public class BRRound {
 		return this.lenghts[state];
 	}
 
+	public void setTimes(int complexity) {
+		double nerf = Math.pow(number, 2) - 0.5D;
+		this.lenghts[1] = Math.max(3 * 20, MathHelper.ceil(complexity * 0.4D * 20 - nerf));
+		this.lenghts[2] = Math.max(5 * 20, MathHelper.ceil(complexity * 0.8D * 20 - nerf));
+	}
+
 	public void tick() {
 		this.roundTick++;
 		this.stateTick++;
@@ -66,13 +73,13 @@ public class BRRound {
 			switch(this.state) {
 				case MEMORIZE_START -> {
 					this.active.removePlayerBuilds();
-					this.active.removeCenterBuild();
-					this.active.placePlayerBuildGrounds();
+					this.active.placePlayerPlotGrounds();
 					this.active.placeCenterBuildGround();
 					this.active.resetPlayers();
 					this.active.pickBuild();
 					this.active.placeCenterBuild();
 					this.active.cacheBuild();
+					this.active.setTimes();
 					this.active.resetScores();
 				}
 				case MEMORIZE -> {
