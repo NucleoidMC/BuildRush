@@ -161,7 +161,6 @@
     "build.enchanter": "Чародейство",
     "build.intentional_game_design": "Жестокие правила игры",
     "text.build_rush.eliminated.self": "Вы выбыли из игры!",
-    "title.build_rush.score": "%d%%",
     "text.build_rush.finished": "Постройка воссоздана полностью правильно!",
     "title.build_rush.perfect": "Идеально!",
     "bar.build_rush.perfect_build": "Идеальная постройка!",
