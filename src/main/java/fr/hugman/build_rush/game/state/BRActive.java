@@ -253,6 +253,9 @@ public class BRActive {
 									player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.6f);
 								}
 							}
+							else {
+								data.bar.setColor(BossBar.Color.GREEN);
+							}
 							if(stateSeconds == 0 && (stateMinutes == 1 || stateMinutes == 2)) {
 								TextUtil.sendSubtitle(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
 								player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1);
@@ -670,6 +673,8 @@ public class BRActive {
 		for(var aliveData : getAliveDatas()) {
 			aliveData.score = 0;
 			aliveData.buildNameElement.setText(Text.empty());
+			aliveData.buildNameElement.setInvisible(true);
+			aliveData.buildNameElement.tick();
 		}
 	}
 
@@ -680,6 +685,9 @@ public class BRActive {
 				if(data.score == this.maxScore) {
 					TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
 					player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+					data.buildNameElement.setText(Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)));
+					data.buildNameElement.setInvisible(false);
+					data.buildNameElement.tick();
 				}
 				else {
 					float score = data.score / (float) this.maxScore;
@@ -690,6 +698,8 @@ public class BRActive {
 					player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
 					TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
 					data.buildNameElement.setText(scoreText);
+					data.buildNameElement.setInvisible(false);
+					data.buildNameElement.tick();
 					player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
 				}
 			}
@@ -897,6 +907,8 @@ public class BRActive {
 			}
 			structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
 			aliveData.buildNameElement.setText(this.currentBuild.name());
+			aliveData.buildNameElement.setInvisible(false);
+			aliveData.buildNameElement.tick();
 		}
 
 		// if the player is inside a block, teleport them on top
@@ -939,6 +951,8 @@ public class BRActive {
 			this.removeBlock(pos);
 		}
 		data.buildNameElement.setText(Text.empty());
+		data.buildNameElement.setInvisible(true);
+		data.buildNameElement.tick();
 	}
 
 	public void placeCenterBuild() {
@@ -983,6 +997,7 @@ public class BRActive {
 		this.judgeElement.setRightRotation(rotation);
 		this.judgeElement.setInterpolationDuration(duration);
 		this.judgeElement.startInterpolation();
+		this.judgeElement.tick();
 	}
 
 	public void elimJudge(int duration) {
@@ -992,10 +1007,13 @@ public class BRActive {
 			return;
 		}
 		lastPlayerData.buildNameElement.setText(Text.empty());
+		lastPlayerData.buildNameElement.setInvisible(true);
+		lastPlayerData.buildNameElement.tick();
 		this.judgeElement.setTranslation(lastPlayerData.plot.center().subtract(this.judgeHolder.getPos()).toVector3f());
 		this.judgeElement.setScale(lastPlayerData.plot.size().toCenterPos().toVector3f());
 		this.judgeElement.setInterpolationDuration(duration);
 		this.judgeElement.startInterpolation();
+		this.judgeElement.tick();
 	}
 
 	public void endJudge(int duration) {
