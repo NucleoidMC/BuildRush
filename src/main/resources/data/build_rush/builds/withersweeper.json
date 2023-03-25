@@ -1,6 +1,9 @@
 {
   "structure": "build_rush:plot/withersweeper",
-  "name": "Withersweeper",
+  "name": {
+    "translate": "gameType.withersweeper.withersweeper",
+    "fallback": "Withersweeper"
+  },
   "author": {
     "name": "haykam",
     "uuid": "c705fc7d-0962-4d1e-905b-b83d81d9b4ec"
