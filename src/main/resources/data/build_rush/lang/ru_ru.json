@@ -87,7 +87,7 @@
     "error.build_rush.region.center.not_found": "Регион «center» не найден",
     "error.build_rush.plot_ground.not_found": "Конструкция строительной платформы «%s» недоступна",
     "text.build_rush.eliminated": "%s выбыл из игры, воссоздав постройку на %s%% правильно.",
-    "text.build_rush.score": "Постройка воссоздана на %s%% правильно!",
+    "text.build_rush.score": "Постройка воссоздана на %s правильно!",
     "text.build_rush.win": "%s победил спустя %d раундов!",
     "error.build_rush.plot_ground.invalid_width_length": "Строительная платформа должна быть квадратной (текущие размеры — %d, %d; ожидались одинаковые)",
     "text.build_rush.win.unknown": "Кто-то победил спустя %d раундов... но кто? (пожалуйста, свяжитесь с автором игры)",
