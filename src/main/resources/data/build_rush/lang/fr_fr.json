@@ -5,7 +5,7 @@
     "text.build_rush.eliminated": "%s a été éliminé !",
     "error.build_rush.region.center.not_found": "La région 'center' n'a pas été trouvée",
     "bar.build_rush.time_left": "%s:%s restant",
-    "sidebar.build_rush.players_left": "%d joueurs sont partis",
+    "sidebar.build_rush.players_left": "%d joueurs restant",
     "error.build_rush.plot_ground.invalid_height": "La structure du sol de parcelle '%s' doit faire 1 bloc de haut (a trouvé %d)",
     "error.build_rush.plot_ground.invalid_width_length": "La structure du sol de parcelle doit être carré (a trouvé %d,%d, attendais la même largeur et longueur)",
     "error.build_rush.plot_ground.not_found": "La structure du sol de parcelle '%s' n'est pas disponible",
