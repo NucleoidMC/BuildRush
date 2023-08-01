@@ -1,19 +1,24 @@
 package fr.hugman.build_rush.game.state;
 
+import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.BRConfig;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.structure.StructureTemplate;
 import net.minecraft.structure.StructureTemplateManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
@@ -125,25 +130,11 @@ public class BRWaiting {
             // Get the plot structure
             var build = buildEntry.value();
 
-            if (build == null) {
-                // This should never happen
-                buildEntry.getKey().ifPresentOrElse(key -> {
-                    throw new GameOpenException(Text.translatable("error.build_rush.build.not_found", key.toString()));
-                }, () -> {
-                    throw new GameOpenException(Text.translatable("error.build_rush.build.not_found", "null"));
-                });
-            }
-
             // Verify that the structure is here and is of the correct size
-            var structure = manager.getTemplate(build.id()).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", build.toString())));
-            if (structure.getSize().getX() != buildSize ||
-                    structure.getSize().getZ() != buildSize ||
-                    structure.getSize().getY() < buildSize || structure.getSize().getY() > buildSize + 1) {
-                buildEntry.getKey().ifPresentOrElse(key -> {
-                    throw new GameOpenException(Text.translatable("error.build_rush.build.invalid_size", key.toString(), structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ(), buildSize, buildSize, buildSize, buildSize, buildSize, buildSize));
-                }, () -> {
-                    throw new GameOpenException(Text.translatable("error.build_rush.build.invalid_size", "null", structure.getSize().getX(), structure.getSize().getY(), structure.getSize().getZ(), buildSize, buildSize, buildSize, buildSize, buildSize, buildSize));
-                });
+            var structure = getAndAssertStructure(build.structure(), manager);
+
+            if (structure == null || structure.getSize().getX() != buildSize) {
+                continue;
             }
             builds.add(build);
         }
@@ -151,5 +142,25 @@ public class BRWaiting {
             throw new GameOpenException(Text.translatable("error.build_rush.build.none"));
         }
         return builds;
+    }
+
+    @Nullable
+    public static StructureTemplate getAndAssertStructure(Identifier id, StructureTemplateManager manager) {
+        var template = manager.getTemplate(id).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", id.toString())));
+
+        int x = template.getSize().getX();
+        int y = template.getSize().getY();
+        int z = template.getSize().getZ();
+
+        if(x != z) {
+            BuildRush.LOGGER.warn("Build structure " + id.toString() + " has an invalid width and length (x=" + x + ", z=" + z + ") and cannot be loaded. It should be square (x = y).");
+            return null;
+        }
+        if(y != x && y != x + 1) {
+            BuildRush.LOGGER.warn("Build structure " + id.toString() + " has an invalid height (" + y + ", should be " + x + " or " + (x + 1) + ") and cannot be loaded.");
+            return null;
+        }
+
+        return template;
     }
 }

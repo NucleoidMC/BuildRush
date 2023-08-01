@@ -34,8 +34,6 @@
   "error.build_rush.plot_ground.not_found": "Plot ground structure '%s' is not available",
   "error.build_rush.plot_ground.invalid_width_length": "Plot ground structure must be square (found %d,%d, expected the same width and length)",
   "error.build_rush.plot_ground.invalid_height": "Plot ground structure must be 1 block tall (found %d)",
-  "error.build_rush.build.not_found": "Build structure '%s' is not available",
-  "error.build_rush.build.invalid_size": "Build '%s' is not of the correct size (found %d,%d,%d, expected %d,%d,%d or %d,%d,%d)",
   "error.build_rush.build.none": "No builds are available",
   "error.build_rush.build.none.weird": "No builds are available (what?)",
 
