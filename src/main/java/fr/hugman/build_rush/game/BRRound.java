@@ -17,16 +17,16 @@ public class BRRound {
 	private int roundTick;
 	private int stateTick;
 	private int state;
-	private final int[] lenghts;
+	private final int[] lengths;
 
 	public BRRound(BRActive active, int memorizeTime, int buildTime) {
 		this.active = active;
 		this.number = 1;
 		this.stateTick = 0;
 		this.state = -1;
-		this.lenghts = new int[]{2, memorizeTime, buildTime, 3, 2, 3, 3};
-		for(int i = 0; i < this.lenghts.length; i++) {
-			this.lenghts[i] *= 20;
+		this.lengths = new int[]{2, memorizeTime, buildTime, 3, 2, 3, 3};
+		for(int i = 0; i < this.lengths.length; i++) {
+			this.lengths[i] *= 20;
 		}
 	}
 
@@ -47,22 +47,22 @@ public class BRRound {
 	}
 
 	public int getLength(int state) {
-		return this.lenghts[state];
+		return this.lengths[state];
 	}
 
 	public void setTimes(int complexity) {
 		double nerf = Math.pow(number, 2) - 0.5D;
-		this.lenghts[1] = Math.max(3 * 20, MathHelper.ceil(complexity * 0.4D * 20 - nerf));
-		this.lenghts[2] = Math.max(5 * 20, MathHelper.ceil(complexity * 0.8D * 20 - nerf));
+		this.lengths[1] = Math.max(3 * 20, MathHelper.ceil(complexity * 0.4D * 20 - nerf));
+		this.lengths[2] = Math.max(5 * 20, MathHelper.ceil(complexity * 0.8D * 20 - nerf));
 	}
 
 	public void tick() {
 		this.roundTick++;
 		this.stateTick++;
-		if(this.state == -1 || this.stateTick >= this.lenghts[this.state]) {
+		if(this.state == -1 || this.stateTick >= this.lengths[this.state]) {
 			this.stateTick = 0;
 			this.state++;
-			if(this.state >= lenghts.length) {
+			if(this.state >= lengths.length) {
 				// Next Round
 				this.roundTick = 0;
 				this.state = 0;
@@ -70,7 +70,7 @@ public class BRRound {
 			}
 
 			// execute state
-			var currentLength = this.lenghts[this.state];
+			var currentLength = this.lengths[this.state];
 			switch(this.state) {
 				case MEMORIZE_START -> {
 					this.active.removePlayerBuilds();
@@ -116,6 +116,6 @@ public class BRRound {
 	}
 
 	public void skip() {
-		this.stateTick = this.lenghts[this.state];
+		this.stateTick = this.lengths[this.state];
 	}
 }

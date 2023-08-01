@@ -888,7 +888,7 @@ public class BRActive {
 				aliveData.buildNameHolder = new ElementHolder();
 				ChunkAttachment.of(aliveData.buildNameHolder, world, aliveData.plot.centerTop().add(0, 1, 0));
 				aliveData.buildNameElement = new TextDisplayElement();
-				aliveData.buildNameElement.setBillboardMode(DisplayEntity.BillboardMode.CENTER);
+				aliveData.buildNameElement.setBillboardMode(DisplayEntity.BillboardMode.VERTICAL);
 				aliveData.buildNameHolder.addElement(aliveData.buildNameElement);
 			}
 		}
@@ -897,7 +897,7 @@ public class BRActive {
 	public void placePlayerBuilds() {
 		var aliveDatas = getAliveDatas();
 
-		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.id()).orElseThrow();
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		for(var aliveData : aliveDatas) {
 			this.world.playSound(null, BlockPos.ofFloored(aliveData.plot.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
@@ -957,7 +957,7 @@ public class BRActive {
 
 	public void placeCenterBuild() {
 		var plotPos = this.centerPlot.min();
-		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.id()).orElseThrow();
+		var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
 		boolean shouldPlacePlotGround = structure.getSize().getY() > this.plotGround.getSize().getX();
 		if(shouldPlacePlotGround) {
 			plotPos = plotPos.down();

@@ -1,4 +1,4 @@
-package fr.hugman.build_rush.build;
+package fr.hugman.build_rush.misc;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
