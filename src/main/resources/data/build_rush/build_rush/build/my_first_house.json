@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/my_first_house",
+  "name": {
+    "translate": "build.my_first_house"
+  },
+  "author": {
+    "name": "WesleyH21",
+    "uuid": "bfa1f77f-c267-4985-ab92-8692a87fab7f"
+  }
+}

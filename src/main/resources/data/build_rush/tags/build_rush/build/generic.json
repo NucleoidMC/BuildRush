@@ -125,14 +125,25 @@
     "build_rush:moai",
     "build_rush:moss",
     "build_rush:mouse",
+    "build_rush:nether_fortress_2",
     "build_rush:oatchi",
     "build_rush:parkour",
     "build_rush:pyramid",
     "build_rush:rgb",
     "build_rush:rooted_pikmin",
+    "build_rush:sniffer",
     "build_rush:sugar_cane_farm",
     "build_rush:sus",
     "build_rush:the_parthenon",
-    "build_rush:tribe"
+    "build_rush:tribe",
+    "build_rush:beauty_of_birth",
+    "build_rush:blowhog",
+    "build_rush:bulborb",
+    "build_rush:cornucopia",
+    "build_rush:foolix",
+    "build_rush:my_first_house",
+    "build_rush:nether_highway",
+    "build_rush:red_pikmin",
+    "build_rush:waterwraith"
   ]
 }
