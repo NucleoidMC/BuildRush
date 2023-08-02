@@ -169,16 +169,24 @@ public class BRActive {
 
     public void enable() {
         var players = this.space.getPlayers();
+        var playerCount = BuildRush.DEBUG ? players.size() + 2 : players.size();
         int i = 0;
         for (var player : players) {
             var data = new PlayerData();
             this.playerDataMap.put(player.getUuid(), data);
             data.join(player);
-            data.playerNameTick += i++ / players.size() * PlayerData.PLAYER_NAME_TICKS;
+            data.playerNameTick += (int) (((float) i++ / playerCount) * PlayerData.PLAYER_NAME_TICKS);
+            BuildRush.debug("Player n°" + i + ", name tick: " + data.playerNameTick);
         }
         if (BuildRush.DEBUG) {
-            this.playerDataMap.put(UUID.randomUUID(), new PlayerData());
-            this.playerDataMap.put(UUID.randomUUID(), new PlayerData());
+            var data1 = new PlayerData();
+            var data2 = new PlayerData();
+            data1.playerNameTick += (int) (((float) i++ / playerCount) * PlayerData.PLAYER_NAME_TICKS);
+            BuildRush.debug("Player n°" + i + ", name tick: " + data1.playerNameTick);
+            data2.playerNameTick += (int) (((float) i++ / playerCount) * PlayerData.PLAYER_NAME_TICKS);
+            BuildRush.debug("Player n°" + i + ", name tick: " + data2.playerNameTick);
+            this.playerDataMap.put(UUID.randomUUID(), data1);
+            this.playerDataMap.put(UUID.randomUUID(), data2);
         }
         this.refreshSidebar();
         this.globalSidebar.show();
