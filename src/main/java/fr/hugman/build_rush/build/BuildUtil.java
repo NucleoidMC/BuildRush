@@ -4,6 +4,8 @@ import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.enums.BedPart;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
@@ -12,6 +14,7 @@ import net.minecraft.item.Items;
 import net.minecraft.item.SkullItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -35,16 +38,34 @@ public class BuildUtil {
 		var pickStack = block.getPickStack(world, pos, state);
 		stacks.add(pickStack);
 
-		if(block instanceof CandleBlock) {
-			pickStack.setCount(state.get(CandleBlock.CANDLES));
-			if(state.get(CandleBlock.LIT)) {
-				var flintStack = new ItemStack(Items.FLINT_AND_STEEL);
-				flintStack.getOrCreateNbt().putBoolean("Unbreakable", true);
-				stacks.add(flintStack);
+		// Multipart blocks
+		if(state.contains(Properties.DOUBLE_BLOCK_HALF)) {
+			if(state.get(Properties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
+				return List.of();
 			}
 		}
-		if(block instanceof SeaPickleBlock) {
-			pickStack.setCount(state.get(SeaPickleBlock.PICKLES));
+		if(state.contains(Properties.BED_PART)) {
+			if(state.get(Properties.BED_PART) == BedPart.FOOT) {
+				return List.of();
+			}
+		}
+
+		// Burnable blocks
+		if(block instanceof CandleBlock && state.get(CandleBlock.LIT)) {
+			var flintStack = new ItemStack(Items.FLINT_AND_STEEL);
+			flintStack.getOrCreateNbt().putBoolean("Unbreakable", true);
+			stacks.add(flintStack);
+		}
+
+		// Multiblocks
+		if(state.contains(Properties.CANDLES)) {
+			pickStack.setCount(state.get(CandleBlock.CANDLES));
+		}
+		if(state.contains(Properties.PICKLES)) {
+			pickStack.setCount(state.get(Properties.PICKLES));
+		}
+		if(state.contains(Properties.EGGS)) {
+			pickStack.setCount(state.get(Properties.EGGS));
 		}
 		if(block instanceof VineBlock) {
 			int count = 0;
@@ -61,6 +82,8 @@ public class BuildUtil {
 		if(block instanceof SlabBlock) {
 			pickStack.setCount(state.get(SlabBlock.TYPE) == SlabType.DOUBLE ? 2 : 1);
 		}
+
+		// Blocks with items inside
 		if(block instanceof EndPortalFrameBlock) {
 			if(state.get(EndPortalFrameBlock.EYE)) {
 				stacks.add(new ItemStack(Items.ENDER_EYE));
@@ -70,7 +93,7 @@ public class BuildUtil {
 			stacks.add(new ItemStack(Items.GLOWSTONE, state.get(RespawnAnchorBlock.CHARGES)));
 		}
 
-
+		// Blocks that require special items
 		if((state.isIn(BlockTags.PORTALS) || state.isIn(BlockTags.FIRE))) {
 			pickStack = new ItemStack(Items.FLINT_AND_STEEL);
 			pickStack.getOrCreateNbt().putBoolean("Unbreakable", true);
@@ -82,6 +105,7 @@ public class BuildUtil {
 			stacks.add(new ItemStack(Items.LAVA_BUCKET));
 		}
 
+		// Block entities
 		if(state.hasBlockEntity()) {
 			var blockEntity = world.getBlockEntity(pos);
 			if(blockEntity == null) {

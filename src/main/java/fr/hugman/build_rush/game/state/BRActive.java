@@ -386,6 +386,9 @@ public class BRActive {
 
     public void giveBlock(PlayerEntity player, BlockPos pos) {
         var stacks = BuildUtil.stacksForBlock(world, pos);
+        if(stacks.isEmpty()) {
+            return;
+        }
         var firstStack = stacks.get(0);
 
         this.give(player, firstStack, true);
