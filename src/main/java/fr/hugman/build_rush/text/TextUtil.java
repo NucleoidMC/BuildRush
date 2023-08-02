@@ -62,6 +62,11 @@ public class TextUtil {
 		sendTitle(player, Text.empty(), fadeInTicks, stayTicks, fadeOutTicks);
 	}
 
+	public static void clearTitle(ServerPlayerEntity player) {
+		clearSubtitle(player);
+		sendTitle(player, Text.empty(), 0, 0, 0);
+	}
+
 	public static void clearSubtitle(ServerPlayerEntity player) {
 		setSubtitle(player, Text.empty());
 	}

@@ -716,6 +716,7 @@ public class BRActive {
 				//TODO: store and send time
 				player.sendMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
 				player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+				TextUtil.clearTitle(player);
 			}
 		}
 		this.calcLastPlayer();
