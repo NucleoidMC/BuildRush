@@ -3,6 +3,7 @@ package fr.hugman.build_rush.game.state;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.BRConfig;
+import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -129,6 +130,10 @@ public class BRWaiting {
         for (RegistryEntry<Build> buildEntry : config.builds()) {
             // Get the plot structure
             var build = buildEntry.value();
+            if(buildEntry.isIn(BRTags.BLACKLIST)) {
+                // TODO: fix #29
+                BuildRush.LOGGER.warn("Build is in the blacklist! Skipping: " + buildEntry);
+            }
 
             // Verify that the structure is here and is of the correct size
             var structure = getAndAssertStructure(build.structure(), manager);
