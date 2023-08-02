@@ -166,10 +166,13 @@ public class BRActive {
     /*=========*/
 
     public void enable() {
-        for (var player : this.space.getPlayers()) {
+        var players = this.space.getPlayers();
+        int i = 0;
+        for (var player : players) {
             var data = new PlayerData();
             this.playerDataMap.put(player.getUuid(), data);
             data.join(player);
+            data.playerNameTick += i++ / players.size() * PlayerData.PLAYER_NAME_TICKS;
         }
         if (BuildRush.DEBUG) {
             this.playerDataMap.put(UUID.randomUUID(), new PlayerData());
@@ -197,6 +200,10 @@ public class BRActive {
         this.round.tick();
         this.judge.tick();
 
+        for (var data : this.playerDataMap.values()) {
+            data.tick();
+        }
+
         var showCountdown = this.round.getState() == BRRoundManager.BUILD || this.round.getState() == BRRoundManager.MEMORIZE;
         var stateTick = this.round.getStateTick();
         var stateTotalTicks = this.round.getLength(this.round.getState());
@@ -210,8 +217,6 @@ public class BRActive {
             var data = this.playerDataMap.get(player.getUuid());
 
             if (data != null) {
-                data.tick();
-
                 if (!showCountdown) {
                     if (data.bar.isVisible()) {
                         data.bar.setVisible(false);
@@ -316,8 +321,6 @@ public class BRActive {
         data.score = 0;
         data.eliminated = true;
         data.setNameHologramColor(TextUtil.NEUTRAL_S);
-        this.removePlayerPlot(data);
-        this.placePlayerPlotGround(data);
         //TODO: play breaking sound
         if (player != null) {
             this.resetPlayer(player, false);
@@ -486,7 +489,11 @@ public class BRActive {
             this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
             this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
             this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
-            this.playerDataMap.get(player.getUuid()).breakingCooldown = PlayerData.BREAKING_COOLDOWN;
+
+            int score = this.calcPlayerScore(data);
+            var data = this.playerDataMap.get(player.getUuid());
+            data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
+            data.setNameHologramColor(TextUtil.lerpScoreColor((float) score / this.maxScore));
             return ActionResult.SUCCESS;
         }
         return ActionResult.FAIL;
@@ -516,7 +523,7 @@ public class BRActive {
             this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
             this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
             var soundGroup = state.getSoundGroup();
-            this.world.playSound(null, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, 1.0f, soundGroup.getPitch() -0.2f);
+            this.world.playSound(null, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, 1.0f, soundGroup.getPitch() - 0.2f);
             data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
             return ActionResult.FAIL;
         }
@@ -798,7 +805,7 @@ public class BRActive {
                     data.playerNameHolder = new ElementHolder();
                     ChunkAttachment.of(data.playerNameHolder, world, pos);
                     data.playerNameElement = new TextDisplayElement(player == null ? Text.of("???") : player.getDisplayName());
-                    data.playerNameElement.setBillboardMode(DisplayEntity.BillboardMode.FIXED);
+                    data.playerNameElement.setBillboardMode(DisplayEntity.BillboardMode.VERTICAL);
                     //data.playerNameElement.setRightRotation(rotation);
                     data.playerNameElement.setScale(new Vector3f(5, 5, 5));
 
@@ -958,7 +965,6 @@ public class BRActive {
         this.canInteract(false);
         this.clearInventory();
         this.judge.spawn();
-        this.judge.lookAround();
     }
 
     public void startElimination() {
@@ -993,6 +999,14 @@ public class BRActive {
                 player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
             }
         }
+
+        if (this.calcLastPlayer() == 1) {
+            var loserData = this.playerDataMap.get(this.loserUuid);
+            this.judge.setAbovePlot(loserData.plot);
+        }
+        else {
+            this.judge.remove();
+        }
     }
 
     public void eliminateLoser() {
@@ -1007,12 +1021,13 @@ public class BRActive {
                 return;
             }
             this.eliminate(loserData);
-            this.judge.sendToPlot(loserData.plot);
+            this.removePlayerPlot(loserData);
+            this.placePlayerPlotGround(loserData);
         }
     }
 
-    public void endElimination() {
+    public void endRound() {
         // TODO: send round results?
-        this.judge.end();
+        this.judge.remove();
     }
 }

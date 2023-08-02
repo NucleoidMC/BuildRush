@@ -81,7 +81,7 @@ public class BRRoundManager {
                 case BUILD_END -> this.active.endBuilding();
                 case ELIMINATION_START -> this.active.startElimination();
                 case ELIMINATION -> this.active.eliminateLoser();
-                case END -> this.active.endElimination();
+                case END -> this.active.endRound();
             }
         }
     }

@@ -22,7 +22,7 @@ public class PlayerData {
 
 	public final ServerBossBar bar;
 
-	public static final int PLAYER_NAME_BOBBLE_LENGTH = 40;
+	public static final int PLAYER_NAME_TICKS = 40;
 	public ElementHolder playerNameHolder;
 	public TextDisplayElement playerNameElement;
 	public int playerNameTick = 0;
@@ -37,15 +37,15 @@ public class PlayerData {
 			this.breakingCooldown--;
 		}
 		if(!this.eliminated) {
-			if(playerNameTick >= PLAYER_NAME_BOBBLE_LENGTH) {
-				playerNameTick = 0;
-				playerNameElement.setTranslation(new Vector3f(0, 0, 0));
+			if(playerNameTick == PLAYER_NAME_TICKS / 2) {
+				playerNameElement.setTranslation(new Vector3f(0, 2, 0));
 				playerNameElement.setInterpolationDuration(20);
 				playerNameElement.startInterpolation();
 				playerNameElement.tick();
 			}
-			if(playerNameTick == PLAYER_NAME_BOBBLE_LENGTH / 2) {
-				playerNameElement.setTranslation(new Vector3f(0, 2, 0));
+			if(playerNameTick >= PLAYER_NAME_TICKS) {
+				playerNameTick = 0;
+				playerNameElement.setTranslation(new Vector3f(0, 0, 0));
 				playerNameElement.setInterpolationDuration(20);
 				playerNameElement.startInterpolation();
 				playerNameElement.tick();
