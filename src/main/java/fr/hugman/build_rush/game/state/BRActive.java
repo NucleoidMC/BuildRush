@@ -2,7 +2,6 @@ package fr.hugman.build_rush.game.state;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
-import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
@@ -12,7 +11,8 @@ import fr.hugman.build_rush.build.BuildUtil;
 import fr.hugman.build_rush.build.CachedBuild;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
-import fr.hugman.build_rush.game.BRRound;
+import fr.hugman.build_rush.game.BRRoundManager;
+import fr.hugman.build_rush.game.Judge;
 import fr.hugman.build_rush.game.PlayerData;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import fr.hugman.build_rush.text.TextUtil;
@@ -85,12 +85,11 @@ public class BRActive {
 
     private long tick;
     private long closeTick;
-    private final BRRound round;
+    private final BRRoundManager round;
     public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
     private boolean canInteractWithWorld;
 
-    private final ElementHolder judgeHolder;
-    private BlockDisplayElement judgeElement;
+    public final Judge judge;
 
     public BRActive(BRConfig config, GameSpace space, ServerWorld world, BlockBounds center, BlockBounds centerPlot, StructureTemplate platform, StructureTemplate plotGround, List<Build> builds) {
         this.config = config;
@@ -107,13 +106,12 @@ public class BRActive {
         this.currentBuild = null;
         this.cachedBuildItems = new ArrayList<>();
 
-        this.round = new BRRound(this, 10, 40);
+        this.round = new BRRoundManager(this, 10, 40);
         this.tick = 0;
         this.closeTick = Long.MAX_VALUE;
         this.canInteractWithWorld = false;
 
-        this.judgeHolder = new ElementHolder();
-        ChunkAttachment.of(this.judgeHolder, world, this.centerPlot.center());
+        this.judge = Judge.of(round, world, this.centerPlot.center());
     }
 
     public GameResult transferActivity() {
@@ -197,8 +195,9 @@ public class BRActive {
             return;
         }
         this.round.tick();
+        this.judge.tick();
 
-        var showCountdown = this.round.getState() == BRRound.BUILD || this.round.getState() == BRRound.MEMORIZE;
+        var showCountdown = this.round.getState() == BRRoundManager.BUILD || this.round.getState() == BRRoundManager.MEMORIZE;
         var stateTick = this.round.getStateTick();
         var stateTotalTicks = this.round.getLength(this.round.getState());
         var statePercent = (float) stateTick / stateTotalTicks;
@@ -291,20 +290,6 @@ public class BRActive {
         this.canInteractWithWorld = canBuild;
     }
 
-    public void eliminateLast() {
-        int result = this.calcLastPlayer();
-        if (result == 2) {
-            this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
-            this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
-        } else if (result == 1) {
-            var lastPlayerData = this.playerDataMap.get(this.loserUuid);
-            if (lastPlayerData == null) {
-                BuildRush.LOGGER.error("Tried to eliminate last player but the player's data was not found!");
-                return;
-            }
-            this.eliminate(lastPlayerData);
-        }
-    }
 
     public void eliminate(PlayerData data) {
         ServerPlayerEntity player = null;
@@ -582,33 +567,6 @@ public class BRActive {
         return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
     }
 
-    public void pickBuild() {
-        if (this.builds.isEmpty()) {
-            this.builds.addAll(this.usedBuilds);
-            this.usedBuilds.clear();
-        }
-        if (this.builds.isEmpty()) {
-            throw new GameOpenException(Text.translatable("error.build_rush.build.none.weird"));
-        }
-        this.currentBuild = this.builds.get(this.world.random.nextInt(this.builds.size()));
-        this.builds.remove(this.currentBuild);
-        this.usedBuilds.add(this.currentBuild);
-        this.refreshSidebar();
-    }
-
-    public void setTimes() {
-        this.round.setTimes(BuildUtil.getBuildComplexity(this.cachedBuild));
-    }
-
-    public void resetPlayers() {
-        for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
-            if (data != null && !data.eliminated) {
-                this.resetPlayer(player, true);
-            }
-        }
-    }
-
     public void resetPlayer(ServerPlayerEntity player, boolean teleport) {
         var data = playerDataMap.get(player.getUuid());
         boolean spectator = data == null || data.eliminated || this.isClosing();
@@ -648,46 +606,6 @@ public class BRActive {
             var particlePos = pos.toCenterPos();
             this.world.spawnParticles(ParticleTypes.CLOUD, particlePos.getX(), particlePos.getY(), particlePos.getZ(), 2, 0.5, 0.5, 0.5, 0.1D);
             this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-        }
-    }
-
-    public void resetScores() {
-        this.loserUuid = null;
-        this.maxScore = 0;
-        for (var pos : this.cachedBuild.positions()) {
-            if (!this.cachedBuild.state(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
-                this.maxScore++;
-            }
-        }
-        for (var data : this.playerDataMap.values()) {
-            if (data.eliminated) {
-                continue;
-            }
-            data.score = 0;
-            data.setNameHologramColor(0xFFFFFF);
-        }
-    }
-
-    public void sendScores() {
-        for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
-            if (data == null || data.eliminated) {
-                continue;
-            }
-
-            if (data.score == this.maxScore) {
-                TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
-                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
-            } else {
-                float scorePercentage = data.score / (float) this.maxScore;
-                String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
-                var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent)
-                        .setStyle(Style.EMPTY.withColor(TextUtil.lerpScoreColor(scorePercentage)).withBold(true));
-
-                player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
-                TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
-                player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
-            }
         }
     }
 
@@ -804,17 +722,6 @@ public class BRActive {
         }
     }
 
-    public void calcPlayerScores() {
-        for (var data : this.playerDataMap.values()) {
-            // don't recalculate if the player already finished, just in case
-            if (!data.eliminated && data.score != this.maxScore) {
-                data.score = calcPlayerScore(data);
-                data.setNameHologramColor(TextUtil.lerpScoreColor((float) data.score / this.maxScore));
-            }
-        }
-        this.calcLastPlayer();
-    }
-
     public int calcPlayerScore(PlayerData playerData) {
         int score = 0;
         for (var pos : this.cachedBuild.positions()) {
@@ -886,12 +793,12 @@ public class BRActive {
 
                     Quaternionf rotation = new Quaternionf();
                     // we are at `pos`, we must rotate to face `center`
-                    rotation.rotateTo(pos.subtract(center).toVector3f(), new Vector3f(0, 1, 0));
+                    rotation.lookAlong(pos.subtract(center).toVector3f(), new Vector3f(0, 1, 0));
 
                     data.playerNameHolder = new ElementHolder();
                     ChunkAttachment.of(data.playerNameHolder, world, pos);
                     data.playerNameElement = new TextDisplayElement(player == null ? Text.of("???") : player.getDisplayName());
-                    data.playerNameElement.setBillboardMode(DisplayEntity.BillboardMode.VERTICAL);
+                    data.playerNameElement.setBillboardMode(DisplayEntity.BillboardMode.FIXED);
                     //data.playerNameElement.setRightRotation(rotation);
                     data.playerNameElement.setScale(new Vector3f(5, 5, 5));
 
@@ -980,56 +887,132 @@ public class BRActive {
         }
     }
 
-    /* =================== */
-    /*  Judge Controllers  */
-    /* =================== */
+    /*=====================*/
+    /*  ROUND CONTROLLERS  */
+    /*=====================*/
 
-    public void spawnJudge() {
-        this.judgeElement = new BlockDisplayElement(Blocks.TNT.getDefaultState());
-        this.judgeElement.setTranslation(new Vector3f(-0.5f, -0.5f, -0.5f));
-        for (var element : this.judgeHolder.getElements()) {
-            this.judgeHolder.removeElement(element);
+    public void newRound() {
+        this.removePlayerBuilds();
+        this.placePlayerPlotGrounds();
+        this.placeCenterBuildGround();
+
+        // pick a new build
+        if (this.builds.isEmpty()) {
+            this.builds.addAll(this.usedBuilds);
+            this.usedBuilds.clear();
         }
-        this.judgeHolder.addElement(this.judgeElement);
+        if (this.builds.isEmpty()) {
+            throw new GameOpenException(Text.translatable("error.build_rush.build.none.weird"));
+        }
+        this.currentBuild = this.builds.get(this.world.random.nextInt(this.builds.size()));
+        this.builds.remove(this.currentBuild);
+        this.usedBuilds.add(this.currentBuild);
+
+        this.placeCenterBuild();
+        this.cacheBuild();
+
+        // reset scores
+        this.loserUuid = null;
+        this.maxScore = 0;
+        for (var pos : this.cachedBuild.positions()) {
+            if (!this.cachedBuild.state(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
+                this.maxScore++;
+            }
+        }
+        for (var data : this.playerDataMap.values()) {
+            if (data.eliminated) {
+                continue;
+            }
+            data.score = 0;
+            data.setNameHologramColor(0xFFFFFF);
+        }
+
+        // reset timers
+        this.round.setTimes(BuildUtil.getBuildComplexity(this.cachedBuild));
+
+        // reset players
+        for (var player : this.space.getPlayers()) {
+            var data = this.playerDataMap.get(player.getUuid());
+            if (data != null && !data.eliminated) {
+                this.resetPlayer(player, true);
+            }
+        }
+
+        // reset HUD
+        this.refreshSidebar();
     }
 
-    public void rotateJudge(int duration) {
-        Quaternionf rotation = new Quaternionf();
-        rotation.rotateAxis((float) Math.toRadians(360) - 0.1f, 0, 1, 0);
-        this.judgeElement.setRightRotation(rotation);
-        this.judgeElement.setInterpolationDuration(duration);
-        this.judgeElement.startInterpolation();
-        this.judgeElement.tick();
+    public void startMemorizing() {
+        this.placePlayerBuilds();
+        this.removeCenterBuild();
+        this.placeCenterBuildGround();
     }
 
-    public void elimJudge(int duration) {
-        duration = Math.min(duration, 20);
-
-        var lastPlayerData = this.playerDataMap.get(this.loserUuid);
-        if (lastPlayerData == null) {
-            //TODO: fallback anim?
-            return;
-        }
-
-        Vec3d pos = Vec3d.of(lastPlayerData.plot.min());
-        Vector3f translation = pos
-                .subtract(this.judgeHolder.getPos())
-                .toVector3f();
-
-        Quaternionf rotation = new Quaternionf();
-        rotation.rotateAxis((float) Math.toRadians(0), 0, 1, 0);
-        this.judgeElement.setRightRotation(rotation);
-        this.judgeElement.setTranslation(translation);
-        this.judgeElement.setScale(Vec3d.of(lastPlayerData.plot.size().add(1, 1, 1)).toVector3f());
-        this.judgeElement.setInterpolationDuration(duration);
-        this.judgeElement.startInterpolation();
-        this.judgeElement.tick();
+    public void startBuilding() {
+        this.removePlayerBuilds();
+        this.canInteract(true);
+        this.giveInventory();
     }
 
-    public void endJudge(int duration) {
-        for (var element : this.judgeHolder.getElements()) {
-            this.judgeHolder.removeElement(element);
+    public void endBuilding() {
+        this.canInteract(false);
+        this.clearInventory();
+        this.judge.spawn();
+        this.judge.lookAround();
+    }
+
+    public void startElimination() {
+        // calculate scores again
+        for (var data : this.playerDataMap.values()) {
+            // don't recalculate if the player already finished, just in case (fairness)
+            if (!data.eliminated && data.score != this.maxScore) {
+                data.score = calcPlayerScore(data);
+                data.setNameHologramColor(TextUtil.lerpScoreColor((float) data.score / this.maxScore));
+            }
         }
-        this.judgeElement = null;
+        this.calcLastPlayer();
+
+        // send score in the chat
+        for (var player : this.space.getPlayers()) {
+            var data = this.playerDataMap.get(player.getUuid());
+            if (data == null || data.eliminated) {
+                continue;
+            }
+
+            if (data.score == this.maxScore) {
+                TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
+                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+            } else {
+                float scorePercentage = data.score / (float) this.maxScore;
+                String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
+                var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent)
+                        .setStyle(Style.EMPTY.withColor(TextUtil.lerpScoreColor(scorePercentage)).withBold(true));
+
+                player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
+                TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
+                player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
+            }
+        }
+    }
+
+    public void eliminateLoser() {
+        int result = this.calcLastPlayer();
+        if (result == 2) {
+            this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
+            this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
+        } else if (result == 1) {
+            var loserData = this.playerDataMap.get(this.loserUuid);
+            if (loserData == null) {
+                BuildRush.LOGGER.error("Tried to eliminate last player but the player's data was not found!");
+                return;
+            }
+            this.eliminate(loserData);
+            this.judge.sendToPlot(loserData.plot);
+        }
+    }
+
+    public void endElimination() {
+        // TODO: send round results?
+        this.judge.end();
     }
 }
