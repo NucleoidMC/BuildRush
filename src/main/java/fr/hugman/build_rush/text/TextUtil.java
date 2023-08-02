@@ -1,5 +1,6 @@
 package fr.hugman.build_rush.text;
 
+import fr.hugman.build_rush.color.ColorUtil;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
@@ -104,5 +105,9 @@ public class TextUtil {
 			case LEGENDARY -> LEGENDARY_S;
 			default -> color;
 		};
+	}
+
+	public static int lerpScoreColor(float delta) {
+		return ColorUtil.lerp(delta, TextUtil.DANGER, TextUtil.MEDIUM, TextUtil.SUCCESS);
 	}
 }
