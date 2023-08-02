@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/rooted_pikmin",
+  "name": {
+    "translate": "build.rooted_pikmin"
+  },
+  "author": {
+    "name": "Hugman",
+    "uuid": "c789cee4-c9fb-4c1b-8a58-fa64dff0034f"
+  }
+}

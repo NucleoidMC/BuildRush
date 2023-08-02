@@ -1,0 +1,9 @@
+{
+  "structure": "build_rush:plot/parkour",
+  "name": {
+    "translate": "build.parkour"
+  },
+  "author": {
+    "name": "WesleyH21"
+  }
+}

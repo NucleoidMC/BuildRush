@@ -1,0 +1,9 @@
+{
+  "structure": "build_rush:plot/lunar_base",
+  "name": {
+    "translate": "build.lunar_base"
+  },
+  "author": {
+    "name": "Mojang Studios"
+  }
+}

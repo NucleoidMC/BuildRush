@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/camping",
+  "name": {
+    "translate": "build.camping"
+  },
+  "author": {
+    "name": "Jerozgen",
+    "uuid": "d8eddfc1-c376-43df-9e19-b031e72bfa78"
+  }
+}

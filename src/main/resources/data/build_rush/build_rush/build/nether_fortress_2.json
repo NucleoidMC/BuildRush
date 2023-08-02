@@ -1,0 +1,10 @@
+{
+  "structure": "build_rush:plot/nether_fortress_2",
+  "name": {
+    "translate": "build.nether_fortress"
+  },
+  "author": {
+    "name": "Jerozgen",
+    "uuid": "d8eddfc1-c376-43df-9e19-b031e72bfa78"
+  }
+}
