@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/honey",
+  "structure": "build_rush:build/honey",
   "name": {
     "translate": "build.honey"
   },

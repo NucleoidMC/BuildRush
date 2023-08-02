@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/fireplace",
+  "structure": "build_rush:build/fireplace",
   "name": {
     "translate": "build.fireplace"
   },

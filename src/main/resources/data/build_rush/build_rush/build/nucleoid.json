@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/nucleoid",
+  "structure": "build_rush:build/nucleoid",
   "name": "Nucleoid",
   "author": {
     "name": "Napero",

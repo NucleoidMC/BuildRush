@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/cake",
+  "structure": "build_rush:build/cake",
   "name": {
     "translate": "block.minecraft.cake"
   },

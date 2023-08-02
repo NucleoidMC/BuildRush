@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/peach",
+  "structure": "build_rush:build/peach",
   "name": {
     "translate": "build.peach"
   },

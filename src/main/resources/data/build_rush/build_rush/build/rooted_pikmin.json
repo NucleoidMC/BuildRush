@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/rooted_pikmin",
+  "structure": "build_rush:build/rooted_pikmin",
   "name": {
     "translate": "build.rooted_pikmin"
   },

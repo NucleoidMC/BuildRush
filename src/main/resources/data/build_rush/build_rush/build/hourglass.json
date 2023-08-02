@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/hourglass",
+  "structure": "build_rush:build/hourglass",
   "name": {
     "translate": "build.hourglass"
   },

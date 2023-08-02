@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tightrope",
+  "structure": "build_rush:build/tightrope",
   "name": {
     "translate": "build.tightrope"
   },

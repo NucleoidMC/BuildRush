@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/mouse",
+  "structure": "build_rush:build/mouse",
   "name": {
     "translate": "build.mouse"
   },

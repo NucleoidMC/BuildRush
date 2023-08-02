@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/desert_well",
+  "structure": "build_rush:build/desert_well",
   "name": {
     "translate": "build.desert_well"
   },

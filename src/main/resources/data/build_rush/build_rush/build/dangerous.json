@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/dangerous",
+  "structure": "build_rush:build/dangerous",
   "name": {
     "translate": "build.dangerous"
   },

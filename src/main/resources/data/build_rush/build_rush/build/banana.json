@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/banana",
+  "structure": "build_rush:build/banana",
   "name": {
     "translate": "build.banana"
   },

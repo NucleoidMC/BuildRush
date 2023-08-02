@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/yankee",
+  "structure": "build_rush:build/flags/signal/yankee",
   "name": {
     "translate": "build.flags.signal.yankee"
   },

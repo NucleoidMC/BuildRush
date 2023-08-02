@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tarning",
+  "structure": "build_rush:build/tarning",
   "name": {
     "translate": "build.tarning"
   },

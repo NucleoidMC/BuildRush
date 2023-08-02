@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/red_sandcastle",
+  "structure": "build_rush:build/red_sandcastle",
   "name": {
     "translate": "build.red_sandcastle"
   },

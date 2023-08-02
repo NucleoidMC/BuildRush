@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/golden_apple",
+  "structure": "build_rush:build/golden_apple",
   "name": {
     "translate": "item.minecraft.golden_apple"
   },

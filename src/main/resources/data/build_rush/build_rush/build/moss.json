@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/moss",
+  "structure": "build_rush:build/moss",
   "name": {
     "translate": "build.moss"
   },

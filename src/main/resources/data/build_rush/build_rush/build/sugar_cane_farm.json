@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/sugar_cane_farm",
+  "structure": "build_rush:build/sugar_cane_farm",
   "name": {
     "translate": "build.sugar_cane_farm"
   },

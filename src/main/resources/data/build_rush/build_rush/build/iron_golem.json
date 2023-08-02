@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/iron_golem",
+  "structure": "build_rush:build/iron_golem",
   "name": {
     "translate": "entity.minecraft.iron_golem"
   },

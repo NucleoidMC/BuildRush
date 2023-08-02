@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/dog_question_mark",
+  "structure": "build_rush:build/dog_question_mark",
   "name": {
     "translate": "build.dog_question_mark"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/failed_portal",
+  "structure": "build_rush:build/failed_portal",
   "name": {
     "translate": "build.failed_portal"
   },

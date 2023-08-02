@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/end_exit_portal",
+  "structure": "build_rush:build/end_exit_portal",
   "name": {
     "translate": "build.end_exit_portal"
   },

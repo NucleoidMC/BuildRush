@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/goldfish",
+  "structure": "build_rush:build/goldfish",
   "name": {
     "translate": "build.goldfish"
   },

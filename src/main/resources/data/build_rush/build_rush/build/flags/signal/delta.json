@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/delta",
+  "structure": "build_rush:build/flags/signal/delta",
   "name": {
     "translate": "build.flags.signal.delta"
   },

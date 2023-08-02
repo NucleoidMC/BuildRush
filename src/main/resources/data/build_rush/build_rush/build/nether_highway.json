@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/nether_highway",
+  "structure": "build_rush:build/nether_highway",
   "name": {
     "translate": "build.nether_highway"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/romeo",
+  "structure": "build_rush:build/flags/signal/romeo",
   "name": {
     "translate": "build.flags.signal.romeo"
   },

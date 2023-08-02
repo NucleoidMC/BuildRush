@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/shadow",
+  "structure": "build_rush:build/shadow",
   "name": {
     "translate": "build.shadow"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/reading",
+  "structure": "build_rush:build/reading",
   "name": {
     "translate": "build.reading"
   }

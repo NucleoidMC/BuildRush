@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/warden",
+  "structure": "build_rush:build/warden",
   "name": {
     "translate": "entity.minecraft.warden"
   },

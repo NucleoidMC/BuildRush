@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/staring_contest",
+  "structure": "build_rush:build/staring_contest",
   "name": {
     "translate": "build.staring_contest"
   }

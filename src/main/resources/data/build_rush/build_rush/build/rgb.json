@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/rgb",
+  "structure": "build_rush:build/rgb",
   "name": {
     "translate": "build.rgb"
   },

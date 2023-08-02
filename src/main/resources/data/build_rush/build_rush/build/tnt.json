@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tnt",
+  "structure": "build_rush:build/tnt",
   "name": {
     "translate": "block.minecraft.tnt"
   },

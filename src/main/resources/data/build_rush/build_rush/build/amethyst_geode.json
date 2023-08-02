@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/amethyst_geode",
+  "structure": "build_rush:build/amethyst_geode",
   "name": {
     "translate": "build.amethyst_geode"
   }

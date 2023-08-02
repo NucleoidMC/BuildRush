@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/spiny_shell",
+  "structure": "build_rush:build/spiny_shell",
   "name": {
     "translate": "build.spiny_shell"
   }

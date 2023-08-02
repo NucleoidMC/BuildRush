@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/nether_fortress_2",
+  "structure": "build_rush:build/nether_fortress_2",
   "name": {
     "translate": "build.nether_fortress"
   },

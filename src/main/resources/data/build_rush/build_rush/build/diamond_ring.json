@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/diamond_ring",
+  "structure": "build_rush:build/diamond_ring",
   "name": {
     "translate": "build.diamond_ring"
   }

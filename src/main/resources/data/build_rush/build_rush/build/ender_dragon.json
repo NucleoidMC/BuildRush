@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/ender_dragon",
+  "structure": "build_rush:build/ender_dragon",
   "name": {
     "translate": "entity.minecraft.ender_dragon"
   },

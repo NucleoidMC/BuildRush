@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/conduit",
+  "structure": "build_rush:build/conduit",
   "name": {
     "translate": "block.minecraft.conduit"
   },

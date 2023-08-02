@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/zulu",
+  "structure": "build_rush:build/flags/signal/zulu",
   "name": {
     "translate": "build.flags.signal.zulu"
   },

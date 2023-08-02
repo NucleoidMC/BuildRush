@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/diamond_dagger",
+  "structure": "build_rush:build/diamond_dagger",
   "name": {
     "translate": "build.diamond_dagger"
   },

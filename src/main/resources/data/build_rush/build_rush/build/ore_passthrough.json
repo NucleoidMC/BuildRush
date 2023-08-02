@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/ore_passthrough",
+  "structure": "build_rush:build/ore_passthrough",
   "name": {
     "translate": "build.ore_passthrough"
   },

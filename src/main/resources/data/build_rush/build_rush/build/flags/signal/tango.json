@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/tango",
+  "structure": "build_rush:build/flags/signal/tango",
   "name": {
     "translate": "build.flags.signal.tango"
   },

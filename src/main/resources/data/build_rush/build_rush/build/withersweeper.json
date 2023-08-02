@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/withersweeper",
+  "structure": "build_rush:build/withersweeper",
   "name": {
     "translate": "gameType.withersweeper.withersweeper",
     "fallback": "Withersweeper"

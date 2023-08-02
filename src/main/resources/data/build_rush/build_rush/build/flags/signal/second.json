@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/second",
+  "structure": "build_rush:build/flags/signal/second",
   "name": {
     "translate": "build.flags.signal.second"
   },

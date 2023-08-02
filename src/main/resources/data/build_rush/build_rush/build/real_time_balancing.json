@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/real_time_balancing",
+  "structure": "build_rush:build/real_time_balancing",
   "name": {
     "translate": "build.real_time_balancing"
   },

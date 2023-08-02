@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/fossil",
+  "structure": "build_rush:build/fossil",
   "name": {
     "translate": "build.fossil"
   },

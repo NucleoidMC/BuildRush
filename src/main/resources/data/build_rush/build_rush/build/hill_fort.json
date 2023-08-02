@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/hill_fort",
+  "structure": "build_rush:build/hill_fort",
   "name": {
     "translate": "build.hill_fort"
   },

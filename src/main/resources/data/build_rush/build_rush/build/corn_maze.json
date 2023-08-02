@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/corn_maze",
+  "structure": "build_rush:build/corn_maze",
   "name": {
     "translate": "build.corn_maze"
   },

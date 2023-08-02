@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/the_parthenon",
+  "structure": "build_rush:build/the_parthenon",
   "name": {
     "translate": "build.the_parthenon"
   },

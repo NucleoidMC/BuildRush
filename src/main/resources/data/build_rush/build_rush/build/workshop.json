@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/workshop",
+  "structure": "build_rush:build/workshop",
   "name": {
     "translate": "build.workshop"
   },

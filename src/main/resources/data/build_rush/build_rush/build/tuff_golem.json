@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tuff_golem",
+  "structure": "build_rush:build/tuff_golem",
   "name": {
     "translate": "build.tuff_golem"
   },

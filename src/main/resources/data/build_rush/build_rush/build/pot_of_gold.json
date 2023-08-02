@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/pot_of_gold",
+  "structure": "build_rush:build/pot_of_gold",
   "name": {
     "translate": "build.pot_of_gold"
   },

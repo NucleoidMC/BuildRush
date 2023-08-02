@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/end_portal",
+  "structure": "build_rush:build/end_portal",
   "name": {
     "translate": "block.minecraft.end_portal"
   },

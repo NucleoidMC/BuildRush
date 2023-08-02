@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/ancient_city",
+  "structure": "build_rush:build/ancient_city",
   "name": {
     "translate": "build.ancient_city"
   },

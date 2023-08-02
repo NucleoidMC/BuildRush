@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/anvil",
+  "structure": "build_rush:build/anvil",
   "name": {
     "translate": "block.minecraft.anvil"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/beacon",
+  "structure": "build_rush:build/beacon",
   "name": {
     "translate": "block.minecraft.beacon"
   },

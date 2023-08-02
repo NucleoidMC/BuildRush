@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/chorus_plant",
+  "structure": "build_rush:build/chorus_plant",
   "name": {
     "translate": "block.minecraft.chorus_plant"
   },

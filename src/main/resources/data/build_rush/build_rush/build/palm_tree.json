@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/palm_tree",
+  "structure": "build_rush:build/palm_tree",
   "name": {
     "translate": "build.palm_tree"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/bee",
+  "structure": "build_rush:build/bee",
   "name": {
     "translate": "entity.minecraft.bee"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/bed_defense",
+  "structure": "build_rush:build/bed_defense",
   "name": {
     "translate": "build.bed_defense"
   },

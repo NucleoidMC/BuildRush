@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/nether_reactor",
+  "structure": "build_rush:build/nether_reactor",
   "name": {
     "translate": "build.nether_reactor"
   },

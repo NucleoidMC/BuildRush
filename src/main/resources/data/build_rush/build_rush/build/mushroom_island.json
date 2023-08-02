@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/mushroom_island",
+  "structure": "build_rush:build/mushroom_island",
   "name": {
     "translate": "build.mushroom_island"
   },

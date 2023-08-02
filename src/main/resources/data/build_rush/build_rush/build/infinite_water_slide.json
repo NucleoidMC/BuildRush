@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/infinite_water_slide",
+  "structure": "build_rush:build/infinite_water_slide",
   "name": {
     "translate": "build.infinite_water_slide"
   },

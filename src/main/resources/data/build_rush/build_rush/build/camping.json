@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/camping",
+  "structure": "build_rush:build/camping",
   "name": {
     "translate": "build.camping"
   },

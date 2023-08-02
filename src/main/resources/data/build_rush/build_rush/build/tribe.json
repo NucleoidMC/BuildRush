@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tribe",
+  "structure": "build_rush:build/tribe",
   "name": {
     "translate": "build.tribe"
   },

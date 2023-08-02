@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/snow_golem",
+  "structure": "build_rush:build/snow_golem",
   "name": {
     "translate": "entity.minecraft.snow_golem"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/radioactive_ooze",
+  "structure": "build_rush:build/radioactive_ooze",
   "name": {
     "translate": "build.radioactive_ooze"
   },

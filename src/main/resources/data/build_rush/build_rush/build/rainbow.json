@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/rainbow",
+  "structure": "build_rush:build/rainbow",
   "name": {
     "translate": "build.rainbow"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/weathered_wave",
+  "structure": "build_rush:build/weathered_wave",
   "name": {
     "translate": "build.weathered_wave"
   },

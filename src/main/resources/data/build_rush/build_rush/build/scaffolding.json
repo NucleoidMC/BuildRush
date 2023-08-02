@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/scaffolding",
+  "structure": "build_rush:build/scaffolding",
   "name": {
     "translate": "block.minecraft.scaffolding"
   },

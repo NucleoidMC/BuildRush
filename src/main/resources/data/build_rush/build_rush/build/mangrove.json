@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/mangrove",
+  "structure": "build_rush:build/mangrove",
   "name": {
     "translate": "build.mangrove"
   },

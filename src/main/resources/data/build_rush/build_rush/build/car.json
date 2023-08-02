@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/car",
+  "structure": "build_rush:build/car",
   "name": {
     "translate": "build.car"
   },

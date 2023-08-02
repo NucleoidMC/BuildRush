@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/copper_golem",
+  "structure": "build_rush:build/copper_golem",
   "name": {
     "translate": "build.copper_golem"
   },

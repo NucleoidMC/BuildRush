@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/christmas_tree",
+  "structure": "build_rush:build/christmas_tree",
   "name": {
     "translate": "build.christmas_tree"
   },

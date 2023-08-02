@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flower",
+  "structure": "build_rush:build/flower",
   "name": {
     "translate": "build.flower"
   },

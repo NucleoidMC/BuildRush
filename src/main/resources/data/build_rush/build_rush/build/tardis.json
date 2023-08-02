@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tardis",
+  "structure": "build_rush:build/tardis",
   "name": {
     "translate": "build.tardis"
   },

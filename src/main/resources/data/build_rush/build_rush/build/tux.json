@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/tux",
+  "structure": "build_rush:build/tux",
   "name": {
     "translate": "build.tux"
   },

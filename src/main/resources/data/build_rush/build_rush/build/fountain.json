@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/fountain",
+  "structure": "build_rush:build/fountain",
   "name": {
     "translate": "build.fountain"
   },

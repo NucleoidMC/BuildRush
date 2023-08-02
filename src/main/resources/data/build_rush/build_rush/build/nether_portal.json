@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/nether_portal",
+  "structure": "build_rush:build/nether_portal",
   "name": {
     "translate": "block.minecraft.nether_portal"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/shulker_bullet",
+  "structure": "build_rush:build/shulker_bullet",
   "name": {
     "translate": "entity.minecraft.shulker_bullet"
   }

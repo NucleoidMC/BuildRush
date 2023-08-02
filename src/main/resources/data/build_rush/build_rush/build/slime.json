@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/slime",
+  "structure": "build_rush:build/slime",
   "name": {
     "translate": "entity.minecraft.slime"
   },

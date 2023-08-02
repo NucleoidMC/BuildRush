@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/cactus",
+  "structure": "build_rush:build/cactus",
   "name": {
     "translate": "block.minecraft.cactus"
   }

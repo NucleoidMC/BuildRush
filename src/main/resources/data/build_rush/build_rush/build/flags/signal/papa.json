@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/papa",
+  "structure": "build_rush:build/flags/signal/papa",
   "name": {
     "translate": "build.flags.signal.papa"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/lonely_tree",
+  "structure": "build_rush:build/lonely_tree",
   "name": {
     "translate": "build.lonely_tree"
   },

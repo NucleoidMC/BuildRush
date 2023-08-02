@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/beds",
+  "structure": "build_rush:build/beds",
   "name": {
     "translate": "build.beds"
   }

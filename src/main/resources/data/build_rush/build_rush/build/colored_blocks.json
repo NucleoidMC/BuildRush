@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/colored_blocks",
+  "structure": "build_rush:build/colored_blocks",
   "name": {
     "translate": "build.colored_blocks"
   },

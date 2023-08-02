@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/raft",
+  "structure": "build_rush:build/raft",
   "name": {
     "translate": "build.raft"
   },

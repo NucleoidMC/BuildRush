@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/checkers",
+  "structure": "build_rush:build/checkers",
   "name": {
     "translate": "build.checkers"
   },

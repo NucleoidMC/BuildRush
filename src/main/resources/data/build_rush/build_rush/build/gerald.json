@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/gerald",
+  "structure": "build_rush:build/gerald",
   "name": {
     "translate": "build.gerald"
   },

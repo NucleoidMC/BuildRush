@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/golf",
+  "structure": "build_rush:build/flags/signal/golf",
   "name": {
     "translate": "build.flags.signal.golf"
   },

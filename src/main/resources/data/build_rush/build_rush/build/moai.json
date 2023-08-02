@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/moai",
+  "structure": "build_rush:build/moai",
   "name": {
     "translate": "build.moai"
   },

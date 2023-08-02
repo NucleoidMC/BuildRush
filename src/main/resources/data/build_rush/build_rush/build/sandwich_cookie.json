@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/sandwich_cookie",
+  "structure": "build_rush:build/sandwich_cookie",
   "name": {
     "translate": "build.sandwich_cookie"
   },

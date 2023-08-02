@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/chicken",
+  "structure": "build_rush:build/chicken",
   "name": {
     "translate": "entity.minecraft.chicken"
   },

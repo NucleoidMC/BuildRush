@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/bush_maze",
+  "structure": "build_rush:build/bush_maze",
   "name": {
     "translate": "build.bush_maze"
   },

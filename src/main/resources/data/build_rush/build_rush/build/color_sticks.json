@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/color_sticks",
+  "structure": "build_rush:build/color_sticks",
   "name": {
     "translate": "build.color_sticks"
   },

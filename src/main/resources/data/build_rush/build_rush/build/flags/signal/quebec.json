@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/quebec",
+  "structure": "build_rush:build/flags/signal/quebec",
   "name": {
     "translate": "build.flags.signal.quebec"
   },

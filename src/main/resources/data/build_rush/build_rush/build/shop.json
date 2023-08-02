@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/shop",
+  "structure": "build_rush:build/shop",
   "name": {
     "translate": "build.shop"
   },

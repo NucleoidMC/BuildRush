@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/flags/signal/two",
+  "structure": "build_rush:build/flags/signal/two",
   "name": {
     "translate": "build.flags.signal.two"
   },

@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/trampoline",
+  "structure": "build_rush:build/trampoline",
   "name": {
     "translate": "build.trampoline"
   },

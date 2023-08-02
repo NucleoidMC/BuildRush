@@ -1,5 +1,5 @@
 {
-  "structure": "build_rush:plot/apple",
+  "structure": "build_rush:build/apple",
   "name": {
     "translate": "item.minecraft.apple"
   },
