@@ -128,6 +128,8 @@ public class BRActive {
             activity.deny(GameRuleType.BLOCK_DROPS);
             activity.deny(GameRuleType.THROW_ITEMS);
             activity.deny(GameRuleType.PICKUP_ITEMS);
+            activity.deny(GameRuleType.CORAL_DEATH);
+            activity.deny(GameRuleType.ICE_MELT);
 
             activity.listen(GameActivityEvents.ENABLE, this::enable);
             activity.listen(GameActivityEvents.TICK, this::tick);
