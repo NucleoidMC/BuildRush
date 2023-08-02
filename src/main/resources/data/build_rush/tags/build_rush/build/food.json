@@ -4,9 +4,13 @@
     "build_rush:banana",
     "build_rush:lemon",
     "build_rush:peach",
+    "build_rush:pineapple",
+    "build_rush:bamboo",
     "build_rush:orange",
     "build_rush:fig",
     "build_rush:golden_apple",
-    "build_rush:watermelon"
+    "build_rush:watermelon",
+    "build_rush:sandwich_cookie",
+    "build_rush:strawberry_dough"
   ]
 }

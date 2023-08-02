@@ -1,6 +1,6 @@
 {
   "values": [
-    "#build_rush:fruits_and_vegetables",
+    "#build_rush:food",
     "build_rush:a_very_serious_guy",
     "build_rush:amethyst_geode",
     "build_rush:ancient_city",
@@ -73,7 +73,6 @@
     "build_rush:palm_tree",
     "build_rush:piano",
     "build_rush:pikachu",
-    "build_rush:pineapple",
     "build_rush:pot_of_gold",
     "build_rush:pufferfish",
     "build_rush:raft",
@@ -85,7 +84,6 @@
     "build_rush:rings",
     "build_rush:romantica",
     "build_rush:sandcastle",
-    "build_rush:sandwich_cookie",
     "build_rush:scaffolding",
     "build_rush:sea_lantern",
     "build_rush:shadow",
@@ -99,7 +97,6 @@
     "build_rush:snow_golem",
     "build_rush:spiny_shell",
     "build_rush:staring_contest",
-    "build_rush:strawberry_dough",
     "build_rush:sunglasses",
     "build_rush:tardis",
     "build_rush:tarning",
