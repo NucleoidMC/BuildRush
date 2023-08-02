@@ -490,8 +490,8 @@ public class BRActive {
             this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
             this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
 
-            int score = this.calcPlayerScore(data);
             var data = this.playerDataMap.get(player.getUuid());
+            int score = this.calcPlayerScore(data);
             data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
             data.setNameHologramColor(TextUtil.lerpScoreColor((float) score / this.maxScore));
             return ActionResult.SUCCESS;
