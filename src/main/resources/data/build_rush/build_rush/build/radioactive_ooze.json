@@ -1,7 +1,7 @@
 {
-  "structure": "build_rush:plot/green_pee",
+  "structure": "build_rush:plot/radioactive_ooze",
   "name": {
-    "translate": "build.green_pee"
+    "translate": "build.radioactive_ooze"
   },
   "author": {
     "name": "haykam",
