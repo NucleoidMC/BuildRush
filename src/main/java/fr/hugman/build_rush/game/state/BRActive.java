@@ -49,6 +49,7 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenException;
@@ -312,7 +313,6 @@ public class BRActive {
 				return;
 			}
 			this.eliminate(lastPlayerData);
-			this.lastPlayerUuid = null;
 		}
 	}
 
@@ -664,6 +664,7 @@ public class BRActive {
 	}
 
 	public void resetScores() {
+		this.lastPlayerUuid = null;
 		this.maxScore = 0;
 		for(var pos : this.cachedBuild.positions()) {
 			if(!this.cachedBuild.state(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
@@ -984,7 +985,8 @@ public class BRActive {
 	/* =================== */
 
 	public void spawnJudge() {
-		this.judgeElement = new BlockDisplayElement(Blocks.SHROOMLIGHT.getDefaultState());
+		this.judgeElement = new BlockDisplayElement(Blocks.TNT.getDefaultState());
+		this.judgeElement.setTranslation(new Vector3f(-0.5f, -0.5f, -0.5f));
 		for(var element : this.judgeHolder.getElements()) {
 			this.judgeHolder.removeElement(element);
 		}
@@ -993,7 +995,7 @@ public class BRActive {
 
 	public void rotateJudge(int duration) {
 		Quaternionf rotation = new Quaternionf();
-		rotation.rotateAxis((float) Math.toRadians(180), 0, 1, 0);
+		rotation.rotateAxis((float) Math.toRadians(360) - 0.1f, 0, 1, 0);
 		this.judgeElement.setRightRotation(rotation);
 		this.judgeElement.setInterpolationDuration(duration);
 		this.judgeElement.startInterpolation();
@@ -1001,6 +1003,8 @@ public class BRActive {
 	}
 
 	public void elimJudge(int duration) {
+		duration = Math.min(duration, 20);
+
 		var lastPlayerData = this.playerDataMap.get(this.lastPlayerUuid);
 		if(lastPlayerData == null) {
 			//TODO: fallback anim?
@@ -1009,8 +1013,17 @@ public class BRActive {
 		lastPlayerData.buildNameElement.setText(Text.empty());
 		lastPlayerData.buildNameElement.setInvisible(true);
 		lastPlayerData.buildNameElement.tick();
-		this.judgeElement.setTranslation(lastPlayerData.plot.center().subtract(this.judgeHolder.getPos()).toVector3f());
-		this.judgeElement.setScale(lastPlayerData.plot.size().toCenterPos().toVector3f());
+
+		Vec3d pos = Vec3d.of(lastPlayerData.plot.min());
+		Vector3f translation = pos
+				.subtract(this.judgeHolder.getPos())
+				.toVector3f();
+
+		Quaternionf rotation = new Quaternionf();
+		rotation.rotateAxis((float) Math.toRadians(0), 0, 1, 0);
+		this.judgeElement.setRightRotation(rotation);
+		this.judgeElement.setTranslation(translation);
+		this.judgeElement.setScale(Vec3d.of(lastPlayerData.plot.size().add(1, 1, 1)).toVector3f());
 		this.judgeElement.setInterpolationDuration(duration);
 		this.judgeElement.startInterpolation();
 		this.judgeElement.tick();
