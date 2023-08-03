@@ -24,13 +24,13 @@ For more information, see [our website](https://nucleoid.xyz).
 - Geefire
 - haykam
 - Sioul
-- Komerish
+- valbrimi
 
 ### 🌐 Translations
 | Language         | Translators                                                                |
 |------------------|----------------------------------------------------------------------------|
 | English (base)   | [Hugman](https://github.com/Hugman76)                                      |
 | French           | [Hugman](https://github.com/Hugman76), [Voxxin](https://github.com/Voxxin) |
-| Swedish          | Komerish                                                                   |
+| Swedish          | valbrimi                                                                   |
 | Norwegian Bokmål | [comradekingu](https://github.com/comradekingu)                            |
 | Russian          | [Jerozgen](https://github.com/Jerozgen)                                    |
