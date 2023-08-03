@@ -133,6 +133,7 @@ public class BRWaiting {
             if(buildEntry.isIn(BRTags.BLACKLIST)) {
                 // TODO: fix #29
                 BuildRush.LOGGER.warn("Build is in the blacklist! Skipping: " + buildEntry);
+                continue;
             }
 
             // Verify that the structure is here and is of the correct size
