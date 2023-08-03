@@ -81,6 +81,7 @@ public class BRActive {
     private CachedBuild cachedBuild;
     private final List<ItemStack> cachedBuildItems;
     private int maxScore;
+    private int perfectRoundsInARow;
     private UUID loserUuid;
 
     private long tick;
@@ -108,6 +109,7 @@ public class BRActive {
 
         this.round = new BRRoundManager(this, 10, 40);
         this.tick = 0;
+        this.perfectRoundsInARow = 0;
         this.closeTick = Long.MAX_VALUE;
         this.canInteractWithWorld = false;
 
@@ -948,7 +950,7 @@ public class BRActive {
         }
 
         // reset timers
-        this.round.setTimes(BuildUtil.getBuildComplexity(this.cachedBuild));
+        this.round.setTimes(BuildUtil.getBuildComplexity(this.cachedBuild), this.perfectRoundsInARow);
 
         // reset players
         for (var player : this.space.getPlayers()) {
@@ -1027,6 +1029,7 @@ public class BRActive {
         if (result == 2) {
             this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
             this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
+            perfectRoundsInARow++;
         } else if (result == 1) {
             var loserData = this.playerDataMap.get(this.loserUuid);
             if (loserData == null) {
@@ -1036,6 +1039,7 @@ public class BRActive {
             this.eliminate(loserData);
             this.removePlayerPlot(loserData);
             this.placePlayerPlotGround(loserData);
+            perfectRoundsInARow = 0;
         }
     }
 

@@ -54,8 +54,8 @@ public class BRRoundManager {
         return this.lengths[this.state];
     }
 
-    public void setTimes(int complexity) {
-        double nerf = Math.pow(number, 2) - 0.5D;
+    public void setTimes(int complexity, int previousPerfectRounds) {
+        double nerf = Math.pow(number, 2) - 0.5D + previousPerfectRounds * 3;
         this.lengths[1] = Math.max(3 * 20, MathHelper.ceil(complexity * 0.4D * 20 - nerf));
         this.lengths[2] = Math.max(5 * 20, MathHelper.ceil(complexity * 0.8D * 20 - nerf));
     }

@@ -14,7 +14,11 @@ For more information, see [our website](https://nucleoid.xyz).
 - [Napero](https://github.com/Napero) - Idea of porting to Nucleoid
 - [Hugman](https://github.com/Hugman76) - Development
 
-### Structures
+### Maps
+- Rock-Candy Mines (by [Hugman](https://github.com/Hugman76))
+
+### Builds
+The builds were made by:
 - atlas8_
 - moehreag
 - Pufferfish
@@ -25,6 +29,8 @@ For more information, see [our website](https://nucleoid.xyz).
 - haykam
 - Sioul
 - valbrimi
+- [Jerozgen](https://github.com/Jerozgen)
+- WesleyH21
 
 ### 🌐 Translations
 | Language         | Translators                                                                |
