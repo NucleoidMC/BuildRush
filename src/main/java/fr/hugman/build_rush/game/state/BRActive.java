@@ -216,7 +216,7 @@ public class BRActive {
 
     public void enable(List<Plot> plots) {
         var players = this.space.getPlayers();
-        var playerCount = BuildRush.DEBUG ? players.size() + 2 : players.size();
+        var playerCount = BuildRush.debug() ? players.size() + 2 : players.size();
         int i = 0;
         for (var player : players) {
             var data = new PlayerData();
@@ -239,7 +239,7 @@ public class BRActive {
 
             this.playerDataMap.put(player.getUuid(), data);
         }
-        if (BuildRush.DEBUG) {
+        if (BuildRush.debug()) {
             var data1 = new PlayerData();
             var data2 = new PlayerData();
 

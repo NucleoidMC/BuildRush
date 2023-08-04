@@ -3,14 +3,13 @@ package fr.hugman.build_rush;
 import fr.hugman.build_rush.game.state.BRWaiting;
 import fr.hugman.build_rush.registry.BRRegistries;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import xyz.nucleoid.plasmid.game.GameType;
 
 public class BuildRush implements ModInitializer {
-	public static final boolean DEBUG = false;
-
 	public static final String MOD_ID = "build_rush";
 	public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
 
@@ -25,6 +24,10 @@ public class BuildRush implements ModInitializer {
 	}
 
 	public static void debug(String s) {
-		if(DEBUG) LOGGER.info(s);
+		if(debug()) LOGGER.info(s);
+	}
+
+	public static boolean debug() {
+		return FabricLoader.getInstance().isDevelopmentEnvironment();
 	}
 }
