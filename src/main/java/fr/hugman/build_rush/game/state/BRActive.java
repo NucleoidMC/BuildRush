@@ -793,15 +793,12 @@ public class BRActive {
 
     public void placePlayerBuilds() {
         var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
-        boolean hasGround = structure.getSize().getY() > this.size;
 
         for (var playerData : playerDataMap.values()) {
             if (playerData.eliminated) {
                 continue;
             }
             playerData.plot.placeBuild(this.world, structure);
-            var plotPos = hasGround ? playerData.plot.groundBounds().min() : playerData.plot.buildBounds().min();
-            structure.place(world, plotPos, plotPos, new StructurePlacementData(), this.world.getRandom(), 2);
         }
 
         // if the player is inside a block, teleport them on top

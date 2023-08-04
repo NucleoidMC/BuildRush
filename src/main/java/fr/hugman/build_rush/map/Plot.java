@@ -22,11 +22,11 @@ public final class Plot {
         this.groundBlocks = groundBlocks;
     }
 
-    public static Plot of(BlockBounds bounds) {
-        var size = bounds.size().getX() + 1;
-        var buildBounds = new BlockBounds(bounds.min().add(0, 1, 0), bounds.max().add(0, size, 0));
+    public static Plot of(BlockBounds groundBounds) {
+        var size = groundBounds.size().getX() + 1;
+        var buildBounds = new BlockBounds(groundBounds.min().add(0, 1, 0), groundBounds.max().add(0, size, 0));
 
-        return new Plot(bounds, buildBounds, null);
+        return new Plot(groundBounds, buildBounds, null);
     }
 
     public BlockBounds groundBounds() {
