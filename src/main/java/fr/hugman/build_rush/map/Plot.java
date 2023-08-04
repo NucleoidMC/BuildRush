@@ -24,7 +24,7 @@ public final class Plot {
 
     public static Plot of(BlockBounds bounds) {
         var size = bounds.size().getX() + 1;
-        var buildBounds = new BlockBounds(bounds.min().add(0, 1, 0), bounds.max().add(0, size + 1, 0));
+        var buildBounds = new BlockBounds(bounds.min().add(0, 1, 0), bounds.max().add(0, size, 0));
 
         return new Plot(bounds, buildBounds, null);
     }
