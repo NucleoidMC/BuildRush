@@ -95,4 +95,8 @@ public class SongManager {
     public void destroy() {
         this.songPlayer.destroy();
     }
+
+    public void setVolume(byte volume) {
+        this.songPlayer.setVolume(volume);
+    }
 }

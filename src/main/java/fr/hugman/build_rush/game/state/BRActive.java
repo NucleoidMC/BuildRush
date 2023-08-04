@@ -88,6 +88,7 @@ public class BRActive {
 
     private long tick;
     private long closeTick;
+    private long closeTicks;
     private final BRRoundManager roundManager;
 
     public final Sidebar sidebar;
@@ -271,6 +272,8 @@ public class BRActive {
     public void tick() {
         this.tick++;
         if (this.isClosing()) {
+            var progress = (float) (this.closeTick - this.tick) / this.closeTicks;
+            this.songManager.setVolume((byte) (progress * 100));
             if (this.tick >= this.closeTick) {
                 this.space.close(GameCloseReason.FINISHED);
             }
@@ -349,6 +352,8 @@ public class BRActive {
 
     private void startClosing() {
         this.closeTick = this.tick + 20 * 10;
+        this.closeTicks = 20 * 10;
+        this.closeTick = this.tick + this.closeTicks;
         for (var player : this.space.getPlayers()) {
             player.getInventory().clear();
             this.resetPlayer(player, false);
