@@ -96,7 +96,7 @@ public class BRActive {
 
     public final SongManager songManager;
 
-    public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds) {
+    public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds, SongManager songManager) {
         this.world = world;
         this.config = config;
         this.space = space;
@@ -120,13 +120,47 @@ public class BRActive {
 
         this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center());
 
-        this.songManager = new SongManager(space);
+        this.songManager = songManager;
     }
 
     public static BRActive create(BRConfig config, GameSpace space, ServerWorld world, BRMap map, List<Build> builds) {
         var centerPlot = map.centerPlot();
         var size = centerPlot.buildBounds().size().getX() + 1;
-        BRActive active = new BRActive(world, space, config, size, centerPlot, builds);
+
+        var songManager = new SongManager(space);
+
+        try {
+            songManager.addSongs(
+                    BuildRush.id("super_bell_hill"),
+                    BuildRush.id("bob_omb_battlefield"),
+                    BuildRush.id("nsmb_castle"),
+                    BuildRush.id("dire_dire_docks"),
+                    BuildRush.id("space_junk_galaxy"),
+                    BuildRush.id("mk8_rainbow_road"),
+                    BuildRush.id("smm_title"),
+                    BuildRush.id("the_grand_finale"),
+                    BuildRush.id("gang_plank_galleon"),
+                    BuildRush.id("zelda_lullaby"),
+                    BuildRush.id("driftveil_city"),
+                    BuildRush.id("green_greens"),
+                    BuildRush.id("deluge_dirge"),
+                    BuildRush.id("spiral_mountain"),
+                    BuildRush.id("clanker_cavern"),
+                    BuildRush.id("walrus_cove"),
+                    BuildRush.id("life_will_change"),
+                    BuildRush.id("asgore"),
+                    BuildRush.id("fields_of_hopes_and_dreams"),
+                    BuildRush.id("rude_buster"),
+                    BuildRush.id("menu_ssb4"),
+                    BuildRush.id("lifelight"),
+                    BuildRush.id("death_wish"),
+                    BuildRush.id("rush_hour")
+            );
+        } catch (IOException e) {
+            throw new GameOpenException(Text.of("Could not find songs"), e);
+        }
+
+        BRActive active = new BRActive(world, space, config, size, centerPlot, builds, songManager);
 
         space.setActivity(activity -> {
             activity.deny(GameRuleType.BREAK_BLOCKS);
@@ -230,38 +264,7 @@ public class BRActive {
             this.sidebar.addPlayer(player);
         }
 
-        try {
-            this.songManager.addSongs(
-                    BuildRush.id("super_bell_hill"),
-                    BuildRush.id("bob_omb_battlefield"),
-                    BuildRush.id("nsmb_castle"),
-                    BuildRush.id("dire_dire_docks"),
-                    BuildRush.id("space_junk_galaxy"),
-                    BuildRush.id("mk8_rainbow_road"),
-                    BuildRush.id("smm_title"),
-                    BuildRush.id("the_grand_finale"),
-                    BuildRush.id("gang_plank_galleon"),
-                    BuildRush.id("zelda_lullaby"),
-                    BuildRush.id("driftveil_city"),
-                    BuildRush.id("green_greens"),
-                    BuildRush.id("deluge_dirge"),
-                    BuildRush.id("spiral_mountain"),
-                    BuildRush.id("clanker_cavern"),
-                    BuildRush.id("walrus_cove"),
-                    BuildRush.id("life_will_change"),
-                    BuildRush.id("asgore"),
-                    BuildRush.id("fields_of_hopes_and_dreams"),
-                    BuildRush.id("rude_buster"),
-                    BuildRush.id("menu_ssb4"),
-                    BuildRush.id("lifelight"),
-                    BuildRush.id("death_wish"),
-                    BuildRush.id("rush_hour")
-            );
-        } catch (IOException e) {
-            throw new GameOpenException(Text.of("Could not find songs"), e);
-        }
-
-        this.songManager.refreshPlayers();
+        this.songManager.addPlayers(this.space.getPlayers());
         this.songManager.setPlaying(true);
     }
 
@@ -365,6 +368,7 @@ public class BRActive {
             }
             this.sidebar.removePlayer(player);
         }
+        this.songManager.destroy();
     }
 
     public void canInteract(boolean canBuild) {
@@ -612,7 +616,8 @@ public class BRActive {
     private void addPlayer(ServerPlayerEntity player) {
         this.sidebar.addPlayer(player);
         this.resetPlayer(player, true);
-        this.songManager.refreshPlayers();
+
+        this.songManager.addPlayer(player);
     }
 
     private void removePlayer(ServerPlayerEntity player) {
@@ -626,6 +631,7 @@ public class BRActive {
         }
         this.sidebar.removePlayer(player);
         this.refreshSidebar();
+        this.songManager.removePlayer(player);
     }
 
     /*===========*/

@@ -1,20 +1,25 @@
 package fr.hugman.build_rush.song;
 
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import nota.model.Song;
 import nota.player.RadioSongPlayer;
 import nota.player.SongPlayer;
 import nota.utils.NBSDecoder;
 import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.GameSpacePlayers;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 public class SongManager {
     public static final HashMap<Identifier, Song> CACHED_SONGS = new HashMap<>();
 
     private final GameSpace space;
-    private SongPlayer songPlayer;
+    public SongPlayer songPlayer;
 
     public SongManager(GameSpace space) {
         this.space = space;
@@ -47,27 +52,48 @@ public class SongManager {
     }
 
     public void addSongs(Song... songs) {
+        var songList = new ArrayList<>(List.of(songs));
+        Collections.shuffle(songList);
+
         if (this.songPlayer == null) {
-            this.songPlayer = new RadioSongPlayer(songs[0]);
+            this.songPlayer = new RadioSongPlayer(songList.get(0));
             for (int i = 1; i < songs.length; i++) {
-                this.songPlayer.getPlaylist().add(songs[i]);
+                this.songPlayer.getPlaylist().add(songList.get(i));
             }
         } else {
-            for (Song song : songs) {
+            for (Song song : songList) {
                 this.songPlayer.getPlaylist().add(song);
             }
         }
     }
 
-    public void refreshPlayers() {
-        if(this.songPlayer == null) return;
-        for(var player : this.space.getPlayers()) {
-            if(this.songPlayer.getPlayerUUIDs().contains(player.getUuid())) continue;
+    public void addPlayer(ServerPlayerEntity player) {
+
+        if (this.songPlayer == null) return;
+        this.songPlayer.addPlayer(player);
+    }
+
+    public void addPlayers(ServerPlayerEntity... players) {
+        for (ServerPlayerEntity player : players) {
+            this.songPlayer.addPlayer(player);
+        }
+    }
+
+    public void removePlayer(ServerPlayerEntity player) {
+        this.songPlayer.removePlayer(player);
+    }
+
+    public void addPlayers(GameSpacePlayers players) {
+        for (ServerPlayerEntity player : players) {
             this.songPlayer.addPlayer(player);
         }
     }
 
     public void setPlaying(boolean playing) {
         this.songPlayer.setPlaying(playing);
+    }
+
+    public void destroy() {
+        this.songPlayer.destroy();
     }
 }
