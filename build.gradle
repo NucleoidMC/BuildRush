@@ -13,6 +13,10 @@ group = project.maven_group
 repositories {
     maven { url = "https://maven.nucleoid.xyz/" }
     maven { url = "https://maven.gegy.dev/" }
+    maven {
+        url "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
 }
 
 dependencies {
@@ -23,6 +27,7 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     modImplementation "xyz.nucleoid:plasmid:${project.plasmid_version}"
+    modImplementation include("maven.modrinth:nota:${project.nota_version}")
 }
 
 processResources {

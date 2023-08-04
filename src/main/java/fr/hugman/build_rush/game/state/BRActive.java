@@ -8,15 +8,16 @@ import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.build.BuildUtil;
-import fr.hugman.build_rush.map.BRMap;
-import fr.hugman.build_rush.map.Plot;
-import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
 import fr.hugman.build_rush.game.BRRoundManager;
 import fr.hugman.build_rush.game.Judge;
 import fr.hugman.build_rush.game.PlayerData;
+import fr.hugman.build_rush.map.BRMap;
+import fr.hugman.build_rush.map.Plot;
+import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
+import fr.hugman.build_rush.song.SongManager;
 import fr.hugman.build_rush.text.TextUtil;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -39,7 +40,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
@@ -57,6 +60,7 @@ import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,9 +90,11 @@ public class BRActive {
     private long closeTick;
     private final BRRoundManager roundManager;
 
-    public final Sidebar globalSidebar = new Sidebar(Sidebar.Priority.MEDIUM);
+    public final Sidebar sidebar;
 
     public final Judge judge;
+
+    public final SongManager songManager;
 
     public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds) {
         this.world = world;
@@ -110,12 +116,16 @@ public class BRActive {
         this.perfectRoundsInARow = 0;
         this.roundManager = new BRRoundManager(this, 10, 40);
 
+        this.sidebar = new Sidebar(Sidebar.Priority.MEDIUM);
+
         this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center());
+
+        this.songManager = new SongManager(space);
     }
 
     public static BRActive create(BRConfig config, GameSpace space, ServerWorld world, BRMap map, List<Build> builds) {
         var centerPlot = map.centerPlot();
-        var size = centerPlot.buildBounds().size().getX()+1;
+        var size = centerPlot.buildBounds().size().getX() + 1;
         BRActive active = new BRActive(world, space, config, size, centerPlot, builds);
 
         space.setActivity(activity -> {
@@ -213,12 +223,23 @@ public class BRActive {
             this.playerDataMap.put(UUID.randomUUID(), data2);
         }
         this.refreshSidebar();
-        this.globalSidebar.show();
+        this.sidebar.show();
 
         for (var player : this.space.getPlayers()) {
             this.resetPlayer(player, true);
-            this.globalSidebar.addPlayer(player);
+            this.sidebar.addPlayer(player);
         }
+
+        try {
+            this.songManager.addSongs(
+                    BuildRush.id("super_bell_hill")
+            );
+        } catch (IOException e) {
+            throw new GameOpenException(Text.of("Could not find songs"), e);
+        }
+
+        this.songManager.refreshPlayers();
+        this.songManager.setPlaying(true);
     }
 
     public void tick() {
@@ -313,13 +334,13 @@ public class BRActive {
     }
 
     private void onClose(GameCloseReason gameCloseReason) {
-        this.globalSidebar.hide();
+        this.sidebar.hide();
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
             if (data != null) {
                 data.leave(player);
             }
-            this.globalSidebar.removePlayer(player);
+            this.sidebar.removePlayer(player);
         }
     }
 
@@ -408,7 +429,7 @@ public class BRActive {
 
     public void giveBlock(PlayerEntity player, BlockPos pos) {
         var stacks = BuildUtil.stacksForBlock(world, pos);
-        if(stacks.isEmpty()) {
+        if (stacks.isEmpty()) {
             return;
         }
         var firstStack = stacks.get(0);
@@ -566,8 +587,9 @@ public class BRActive {
     }
 
     private void addPlayer(ServerPlayerEntity player) {
-        this.globalSidebar.addPlayer(player);
+        this.sidebar.addPlayer(player);
         this.resetPlayer(player, true);
+        this.songManager.refreshPlayers();
     }
 
     private void removePlayer(ServerPlayerEntity player) {
@@ -579,7 +601,7 @@ public class BRActive {
             data.leave(player);
             this.playerDataMap.remove(player.getUuid());
         }
-        this.globalSidebar.removePlayer(player);
+        this.sidebar.removePlayer(player);
         this.refreshSidebar();
     }
 
@@ -588,9 +610,9 @@ public class BRActive {
     /*===========*/
 
     public void refreshSidebar() {
-        this.globalSidebar.setTitle(Text.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true)));
+        this.sidebar.setTitle(Text.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true)));
 
-        this.globalSidebar.set(b -> {
+        this.sidebar.set(b -> {
             b.add(Text.translatable("sidebar.build_rush.round", this.roundManager.getNumber()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
             b.add(Text.empty());
 
@@ -744,8 +766,8 @@ public class BRActive {
         var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
         boolean hasGround = structure.getSize().getY() > this.size;
 
-        for(var playerData : playerDataMap.values()) {
-            if(playerData.eliminated) {
+        for (var playerData : playerDataMap.values()) {
+            if (playerData.eliminated) {
                 continue;
             }
             playerData.plot.placeBuild(this.world, structure);
@@ -768,8 +790,8 @@ public class BRActive {
     }
 
     public void removePlayerBuilds() {
-        for(var playerData : this.playerDataMap.values()) {
-            if(playerData.eliminated) {
+        for (var playerData : this.playerDataMap.values()) {
+            if (playerData.eliminated) {
                 continue;
             }
             playerData.plot.removeBuild(this.world);
@@ -783,8 +805,8 @@ public class BRActive {
     public void newRound() {
         this.removePlayerBuilds();
 
-        for(var playerData : this.playerDataMap.values()) {
-            if(playerData.eliminated) {
+        for (var playerData : this.playerDataMap.values()) {
+            if (playerData.eliminated) {
                 continue;
             }
             playerData.plot.placeGround(this.world);
@@ -893,8 +915,7 @@ public class BRActive {
         if (this.calcLastPlayer() == 1) {
             var loserData = this.playerDataMap.get(this.loserUuid);
             this.judge.setAbovePlot(loserData.plot.buildBounds());
-        }
-        else {
+        } else {
             this.judge.remove();
         }
     }
