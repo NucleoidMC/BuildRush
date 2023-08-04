@@ -4,7 +4,7 @@
     "translate": "game.build_rush.small.with_map",
     "with": [
       {
-        "translate": "map.build_rush.sandcastles"
+        "translate": "map.build_rush.minuscule_memories"
       }
     ]
   },
@@ -15,7 +15,7 @@
     "max": 16
   },
   "map": {
-    "template": "build_rush:sandcastles"
+    "template": "build_rush:minuscule_memories"
   },
   "builds": "#build_rush:generic"
 }
