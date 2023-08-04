@@ -1,8 +1,11 @@
 {
   "game.build_rush": "Build Rush",
   "game.build_rush.small": "Build Rush: Small (5x5)",
+  "game.build_rush.small.with_map": "Build Rush: Small - %s",
   "game.build_rush.regular": "Build Rush: Regular (7x7)",
+  "game.build_rush.regular.with_map": "Build Rush: Regular - %s",
   "game.build_rush.huge": "Build Rush: Huge (9x9)",
+  "game.build_rush.huge.with_map": "Build Rush: Huge - %s",
   "game.build_rush.flags.signal": "Build Rush: Signal Flags",
 
   "map.build_rush.rock_candy_mines": "Rock-Candy Mines",

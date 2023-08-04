@@ -1,21 +1,19 @@
 {
   "type": "build_rush:standard",
   "name": {
-    "translate": "game.build_rush.small"
+    "translate": "game.build_rush.small.with_map",
+    "with": {
+      "translate": "map.build_rush.rock_candy_mines"
+    }
   },
   "icon": "minecraft:dripstone_block",
   "players": {
     "min": 1,
     "threshold": 8,
-    "max": 12
+    "max": 16
   },
   "map": {
-    "template": "build_rush:rock_candy_mines",
-    "platform": "build_rush:platform/rock_candy_pillar",
-    "plot_ground": "build_rush:plot_ground/granite",
-    "center_plot_offset": [9, 81, 9],
-    "platform_plot_offset": [9, 46, 10],
-    "platform_spacing": 5
+    "template": "build_rush:rock_candy_mines"
   },
   "builds": "#build_rush:generic"
 }

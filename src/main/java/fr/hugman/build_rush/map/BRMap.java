@@ -42,13 +42,13 @@ public record BRMap(Plot centerPlot, List<Plot> plots, RuntimeWorldConfig worldC
         final int size = centerPlotBounds.size().getX()+1;
         validateBounds(centerPlotBounds, size);
 
-        var plotBoundss = metadata.getRegionBounds("plot").toList();
-        if (plotBoundss.size() < config.playerConfig().maxPlayers()) {
-            throw new GameOpenException(Text.translatable("error.build_rush.mapConfig.plots.not_enough", plotBoundss.size(), config.playerConfig().maxPlayers()));
+        var plotBoundsList = metadata.getRegionBounds("plot").toList();
+        if (plotBoundsList.size() < config.playerConfig().maxPlayers()) {
+            throw new GameOpenException(Text.translatable("error.build_rush.mapConfig.plots.not_enough", plotBoundsList.size(), config.playerConfig().maxPlayers()));
         }
 
         List<Plot> plots = new ArrayList<>();
-        for(var plotBounds : plotBoundss) {
+        for(var plotBounds : plotBoundsList) {
             validateBounds(plotBounds, size);
             plots.add(Plot.of(plotBounds));
         }

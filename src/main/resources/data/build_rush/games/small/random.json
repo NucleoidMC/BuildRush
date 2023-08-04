@@ -1,0 +1,13 @@
+{
+  "type": "plasmid:random",
+  "games": [
+    "build_rush:small/rock_candy_mines",
+    "build_rush:small/sandcastles"
+  ],
+  "name": {
+    "translate": "game.build_rush.small"
+  },
+  "icon": {
+    "id": "minecraft:spyglass"
+  }
+}
