@@ -68,7 +68,6 @@ public class SongManager {
     }
 
     public void addPlayer(ServerPlayerEntity player) {
-
         if (this.songPlayer == null) return;
         this.songPlayer.addPlayer(player);
     }
