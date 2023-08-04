@@ -94,7 +94,7 @@ public class Judge {
         this.judgeElement.setInterpolationDuration(0);
         this.judgeElement.startInterpolation();
         this.judgeElement.tick();
-        this.size = plot.size().getX();
+        this.size = plot.size().getX()+1;
     }
 
     public void nukePlot1() {

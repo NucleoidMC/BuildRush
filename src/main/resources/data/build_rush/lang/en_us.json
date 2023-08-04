@@ -6,6 +6,7 @@
   "game.build_rush.flags.signal": "Build Rush: Signal Flags",
 
   "map.build_rush.rock_candy_mines": "Rock-Candy Mines",
+  "map.build_rush.sandcastles": "Sandcastles",
 
   "generic.build_rush.score": "%d%%",
 
@@ -29,11 +30,11 @@
   "bar.build_rush.time_left": "%s:%s left",
   "bar.build_rush.perfect_build": "Perfect Build!",
 
-  "error.build_rush.region.center.not_found": "Region 'center' not found",
-  "error.build_rush.platform.not_found": "Platform structure '%s' is not available",
-  "error.build_rush.plot_ground.not_found": "Plot ground structure '%s' is not available",
-  "error.build_rush.plot_ground.invalid_width_length": "Plot ground structure must be square (found %d,%d, expected the same width and length)",
-  "error.build_rush.plot_ground.invalid_height": "Plot ground structure must be 1 block tall (found %d)",
+  "error.build_rush.map.center_plot.not_found": "Region 'center_plot' not found",
+  "error.build_rush.map.plot.wrong_size": "Every plot must be of the same width and length (x=%d, z=%d)",
+  "error.build_rush.map.plot.wrong_size_as_center": "Every plot must be of the same size as the center plot (found size of %d, expected %d)",
+  "error.build_rush.map.plot.wrong_height": "Every plot must be 1 block tall (y=%d)",
+  "error.build_rush.map.plots.not_enough": "Not enough regions 'plot' (found %d/%d, as per the game's player configuration)",
   "error.build_rush.build.none": "No builds are available",
   "error.build_rush.build.none.weird": "No builds are available (what?)",
 

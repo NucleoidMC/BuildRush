@@ -1,0 +1,16 @@
+{
+  "type": "build_rush:standard",
+  "name": {
+    "translate": "game.build_rush.small"
+  },
+  "icon": "minecraft:sandstone_wall",
+  "players": {
+    "min": 1,
+    "threshold": 8,
+    "max": 16
+  },
+  "map": {
+    "template": "build_rush:sandcastles"
+  },
+  "builds": "#build_rush:generic"
+}

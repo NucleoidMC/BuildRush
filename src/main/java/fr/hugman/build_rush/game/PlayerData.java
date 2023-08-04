@@ -1,19 +1,25 @@
 package fr.hugman.build_rush.game;
 
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
+import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
+import fr.hugman.build_rush.map.BRMapConfig;
+import fr.hugman.build_rush.map.Plot;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 public class PlayerData {
 	public static final Text DEFAULT_BAR_TITLE = Text.translatable("game.build_rush");
 
-	public BlockBounds platform;
-	public BlockBounds plot;
+	public Plot plot;
 	public boolean eliminated = false;
 	public int score = 0;
 
@@ -36,7 +42,7 @@ public class PlayerData {
 		if(this.breakingCooldown > 0) {
 			this.breakingCooldown--;
 		}
-		if(!this.eliminated) {
+		if(!this.eliminated && playerNameElement != null) {
 			if(playerNameTick == PLAYER_NAME_TICKS / 2) {
 				playerNameElement.setTranslation(new Vector3f(0, 2, 0));
 				playerNameElement.setInterpolationDuration(20);
@@ -62,8 +68,9 @@ public class PlayerData {
 	}
 
 	public void setNameHologramColor(int color) {
-		var text = this.playerNameElement.getText();
-		this.playerNameElement.setText(text.copy().setStyle(text.getStyle().withColor(color)));
-		this.playerNameElement.tick();
+		if(playerNameElement == null) return;
+		var text = playerNameElement.getText();
+		playerNameElement.setText(text.copy().setStyle(text.getStyle().withColor(color)));
+		playerNameElement.tick();
 	}
 }

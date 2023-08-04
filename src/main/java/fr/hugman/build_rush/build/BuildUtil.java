@@ -1,6 +1,7 @@
 package fr.hugman.build_rush.build;
 
 import fr.hugman.build_rush.BuildRush;
+import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -135,7 +136,7 @@ public class BuildUtil {
 		return 1;
 	}
 
-	public static int getBuildComplexity(CachedBuild build) {
+	public static int getBuildComplexity(CachedBlocks build) {
 		int complexity = 0;
 		var blockList = new ArrayList<Block>();
 		for(var pos : build.positions()) {
