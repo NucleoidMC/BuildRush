@@ -1,7 +1,12 @@
 {
   "type": "build_rush:standard",
   "name": {
-    "translate": "game.build_rush.small"
+    "translate": "game.build_rush.small.with_map",
+    "with": [
+      {
+        "translate": "map.build_rush.sandcastles"
+      }
+    ]
   },
   "icon": "minecraft:sandstone_wall",
   "players": {
