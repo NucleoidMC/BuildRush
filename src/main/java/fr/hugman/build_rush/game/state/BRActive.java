@@ -232,7 +232,30 @@ public class BRActive {
 
         try {
             this.songManager.addSongs(
-                    BuildRush.id("super_bell_hill")
+                    BuildRush.id("super_bell_hill"),
+                    BuildRush.id("bob_omb_battlefield"),
+                    BuildRush.id("nsmb_castle"),
+                    BuildRush.id("dire_dire_docks"),
+                    BuildRush.id("space_junk_galaxy"),
+                    BuildRush.id("mk8_rainbow_road"),
+                    BuildRush.id("smm_title"),
+                    BuildRush.id("the_grand_finale"),
+                    BuildRush.id("gang_plank_galleon"),
+                    BuildRush.id("zelda_lullaby"),
+                    BuildRush.id("driftveil_city"),
+                    BuildRush.id("green_greens"),
+                    BuildRush.id("deluge_dirge"),
+                    BuildRush.id("spiral_mountain"),
+                    BuildRush.id("clanker_cavern"),
+                    BuildRush.id("walrus_cove"),
+                    BuildRush.id("life_will_change"),
+                    BuildRush.id("asgore"),
+                    BuildRush.id("fields_of_hopes_and_dreams"),
+                    BuildRush.id("rude_buster"),
+                    BuildRush.id("menu_ssb4"),
+                    BuildRush.id("lifelight"),
+                    BuildRush.id("death_wish"),
+                    BuildRush.id("rush_hour")
             );
         } catch (IOException e) {
             throw new GameOpenException(Text.of("Could not find songs"), e);
