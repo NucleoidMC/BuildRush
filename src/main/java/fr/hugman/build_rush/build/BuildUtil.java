@@ -93,6 +93,9 @@ public class BuildUtil {
 		if(block instanceof RespawnAnchorBlock) {
 			stacks.add(new ItemStack(Items.GLOWSTONE, state.get(RespawnAnchorBlock.CHARGES)));
 		}
+		if(block instanceof FlowerPotBlock && block != Blocks.FLOWER_POT) {
+			stacks.add(new ItemStack(Items.FLOWER_POT));
+		}
 
 		// Blocks that require special items
 		if((state.isIn(BlockTags.PORTALS) || state.isIn(BlockTags.FIRE))) {
