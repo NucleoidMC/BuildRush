@@ -10,8 +10,8 @@ import org.apache.logging.log4j.Logger;
 import xyz.nucleoid.plasmid.game.GameType;
 
 public class BuildRush implements ModInitializer {
-	public static final String MOD_ID = "build_rush";
-	public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
+	public static final String ID = "build_rush";
+	public static final Logger LOGGER = LogManager.getLogger(ID);
 
 	@Override
 	public void onInitialize() {
@@ -20,7 +20,7 @@ public class BuildRush implements ModInitializer {
 	}
 
 	public static Identifier id(String s) {
-		return new Identifier(MOD_ID, s);
+		return new Identifier(ID, s);
 	}
 
 	public static void debug(String s) {

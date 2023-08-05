@@ -18,6 +18,7 @@ import fr.hugman.build_rush.map.Plot;
 import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import fr.hugman.build_rush.song.SongManager;
+import fr.hugman.build_rush.statistics.BRStatistics;
 import fr.hugman.build_rush.text.TextUtil;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
@@ -50,9 +51,12 @@ import org.joml.Vector3f;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameSpace;
+import xyz.nucleoid.plasmid.game.GameSpaceStatistics;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
+import xyz.nucleoid.plasmid.game.stats.StatisticKeys;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
@@ -96,6 +100,7 @@ public class BRActive {
     public final Judge judge;
 
     public final SongManager songManager;
+    public final GameStatisticBundle statistics;
 
     public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds, SongManager songManager) {
         this.world = world;
@@ -124,6 +129,7 @@ public class BRActive {
         this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center().add(0, size + 3, 0));
 
         this.songManager = songManager;
+        this.statistics = space.getStatistics().bundle(BuildRush.ID);
     }
 
     public static BRActive create(BRConfig config, GameSpace space, ServerWorld world, BRMap map, List<Build> builds) {
@@ -393,7 +399,6 @@ public class BRActive {
     public void canInteract(boolean canBuild) {
         this.canInteractWithWorld = canBuild;
     }
-
 
     public void eliminate(PlayerData data) {
         ServerPlayerEntity player = null;
@@ -956,7 +961,6 @@ public class BRActive {
         }
         int calc = this.calcLastPlayer();
 
-        // send score in the chat
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
             if (data == null || data.eliminated) {
@@ -966,6 +970,7 @@ public class BRActive {
             if (data.score == this.maxScore) {
                 TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
                 player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+                this.statistics.forPlayer(player).increment(BRStatistics.TOTAL_PERFECT_BUILDS, 1);
             } else {
                 float scorePercentage = data.score / (float) this.maxScore;
                 String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
