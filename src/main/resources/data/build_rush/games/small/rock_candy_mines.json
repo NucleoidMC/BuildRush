@@ -15,7 +15,9 @@
     "max": 16
   },
   "map": {
-    "template": "build_rush:rock_candy_mines"
+    "template": "build_rush:rock_candy_mines",
+    "nametag_offset": 5,
+    "nametag_size": 7
   },
   "builds": "#build_rush:generic"
 }

@@ -88,6 +88,7 @@ public class BRActive {
     private long tick;
     private long closeTick;
     private long closeTicks;
+    private boolean shouldClose;
     private final RoundManager roundManager;
 
     public final Sidebar sidebar;
@@ -111,14 +112,16 @@ public class BRActive {
         this.buildItems = new ArrayList<>();
         this.canInteractWithWorld = false;
 
+        this.perfectRoundsInARow = 0;
+
         this.tick = 0;
         this.closeTick = Long.MAX_VALUE;
-        this.perfectRoundsInARow = 0;
+        this.shouldClose= false;
         this.roundManager = new RoundManager(this, 10, 40);
 
         this.sidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 
-        this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center());
+        this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center().add(0, size + 3, 0));
 
         this.songManager = songManager;
     }
@@ -449,12 +452,12 @@ public class BRActive {
                             p.sendMessage(TextUtil.translatable(TextUtil.STAR, TextUtil.EPIC, "text.build_rush.win", winner.getName().getString(), this.roundManager.getNumber()));
                         }
                     }
-                    this.startClosing();
+                    shouldClose = true;
                     return;
                 }
             }
             this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.FLAG, TextUtil.EPIC, "text.build_rush.win.unknown", this.roundManager.getNumber()));
-            this.startClosing();
+            shouldClose = true;
         }
     }
 
@@ -822,16 +825,13 @@ public class BRActive {
             playerData.plot.placeBuild(this.world, structure);
         }
 
-        // if the player is inside a block, teleport them on top
-        for (var uuid : this.playerDataMap.keySet()) {
-            if (!this.space.getPlayers().contains(uuid)) {
+        // if the player is inside a block, teleport them
+        for(var player : this.space.getPlayers()) {
+            if(player.isSpectator()) {
                 continue;
             }
-            var player = this.world.getPlayerByUuid(uuid);
-            if (player instanceof ServerPlayerEntity serverPlayer) {
-                if (!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
-                    this.resetPlayer(serverPlayer, true);
-                }
+            if (!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
+                this.resetPlayer(player, true);
             }
         }
     }
@@ -930,6 +930,9 @@ public class BRActive {
     }
 
     public void startElimination() {
+        var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
+        this.centerPlot.placeBuild(this.world, structure);
+
         // calculate scores again
         for (var data : this.playerDataMap.values()) {
             // don't recalculate if the player already finished, just in case (fairness)
@@ -938,7 +941,7 @@ public class BRActive {
                 data.setNameHologramColor(TextUtil.lerpScoreColor((float) data.score / this.maxScore));
             }
         }
-        this.calcLastPlayer();
+        int calc = this.calcLastPlayer();
 
         // send score in the chat
         for (var player : this.space.getPlayers()) {
@@ -962,9 +965,10 @@ public class BRActive {
             }
         }
 
-        if (this.calcLastPlayer() == 1) {
+        if (calc == 1) {
             var loserData = this.playerDataMap.get(this.loserUuid);
-            this.judge.setAbovePlot(loserData.plot.buildBounds());
+            this.judge.setPlot(loserData.plot);
+            this.judge.setAbovePlot();
         } else {
             this.judge.remove();
         }
@@ -983,14 +987,30 @@ public class BRActive {
                 return;
             }
             this.eliminate(loserData);
+            perfectRoundsInARow = 0;
+
+            // play an explosion sound and particles
+            this.world.playSound(null, BlockPos.ofFloored(loserData.plot.buildBounds().center()), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f, 1.0f);
+            this.world.spawnParticles(ParticleTypes.EXPLOSION,
+                    loserData.plot.buildBounds().center().getX(), loserData.plot.buildBounds().center().getY(), loserData.plot.buildBounds().center().getZ(), 10,
+                    this.size / 1.5f, this.size / 1.5f, this.size / 1.5f, 0.0);
             loserData.plot.placeGround(this.world);
             loserData.plot.removeBuild(this.world);
-            perfectRoundsInARow = 0;
         }
     }
 
     public void endRound() {
         // TODO: send round results?
         this.judge.remove();
+        if(this.shouldClose) {
+            this.removePlayerBuilds();
+            for (var playerData : this.playerDataMap.values()) {
+                if (playerData.eliminated) {
+                    continue;
+                }
+                playerData.plot.placeGround(this.world);
+            }
+            this.startClosing();
+        }
     }
 }
