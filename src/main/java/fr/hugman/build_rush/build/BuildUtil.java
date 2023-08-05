@@ -99,10 +99,10 @@ public class BuildUtil {
 			pickStack = new ItemStack(Items.FLINT_AND_STEEL);
 			pickStack.getOrCreateNbt().putBoolean("Unbreakable", true);
 		}
-		if(fluid == Fluids.WATER) {
+		if(fluid == Fluids.WATER || block == Blocks.WATER_CAULDRON) {
 			stacks.add(new ItemStack(Items.WATER_BUCKET));
 		}
-		if(fluid == Fluids.LAVA) {
+		if(fluid == Fluids.LAVA || block == Blocks.LAVA_CAULDRON) {
 			stacks.add(new ItemStack(Items.LAVA_BUCKET));
 		}
 
