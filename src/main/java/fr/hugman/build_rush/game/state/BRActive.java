@@ -297,7 +297,17 @@ public class BRActive {
 
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
-
+            if(!player.isSpectator() && this.canInteractWithWorld) {
+                // if the player is in another's safe zone, teleport them back to their own plot
+                for(var otherData : this.playerDataMap.values()) {
+                    if(otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
+                        resetPlayer(player, true);
+                        player.sendMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
+                        player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.PLAYERS, 1, 1);
+                        break;
+                    }
+                }
+            }
             if (data != null) {
                 if (!showCountdown) {
                     if (data.bar.isVisible()) {
@@ -351,7 +361,6 @@ public class BRActive {
     }
 
     private void startClosing() {
-        this.closeTick = this.tick + 20 * 10;
         this.closeTicks = 20 * 10;
         this.closeTick = this.tick + this.closeTicks;
         for (var player : this.space.getPlayers()) {

@@ -43,6 +43,7 @@ public class TextUtil {
 	public static final String BELL = "🔔";
 	public static final String CHECKMARK = "✔";
 	public static final String X = "✘";
+	public static final String WARNING = "⚠";
 
 	public static void sendTitle(ServerPlayerEntity player, Text title, int fadeInTicks, int stayTicks, int fadeOutTicks) {
 		player.networkHandler.sendPacket(new TitleFadeS2CPacket(fadeInTicks, stayTicks, fadeOutTicks));

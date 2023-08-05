@@ -21,6 +21,7 @@
   "text.build_rush.win": "%s won after %d rounds!",
   "text.build_rush.win.self": "You won after %d rounds!",
   "text.build_rush.win.unknown": "Someone won after %d rounds... But we don't know who? (please contact the game author)",
+  "text.build_rush.do_not_disturb": "You may not hinder any player from building!",
 
   "title.build_rush.perfect": "Perfect!",
   "title.build_rush.eliminated": "Eliminated!",

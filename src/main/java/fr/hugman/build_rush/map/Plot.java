@@ -14,19 +14,22 @@ import xyz.nucleoid.map_templates.BlockBounds;
 public final class Plot {
     private final BlockBounds groundBounds;
     private final BlockBounds buildBounds;
+    private final BlockBounds safeZone;
     private CachedBlocks groundBlocks;
 
-    public Plot(BlockBounds groundBounds, BlockBounds buildBounds, CachedBlocks groundBlocks) {
+    public Plot(BlockBounds groundBounds, BlockBounds buildBounds, BlockBounds safeZone, CachedBlocks groundBlocks) {
         this.groundBounds = groundBounds;
         this.buildBounds = buildBounds;
         this.groundBlocks = groundBlocks;
+        this.safeZone = safeZone;
     }
 
     public static Plot of(BlockBounds groundBounds) {
         var size = groundBounds.size().getX() + 1;
         var buildBounds = new BlockBounds(groundBounds.min().add(0, 1, 0), groundBounds.max().add(0, size, 0));
+        var safeZone = new BlockBounds(buildBounds.min().add(-1, -1, -1), buildBounds.max().add(1, 1, 1));
 
-        return new Plot(groundBounds, buildBounds, null);
+        return new Plot(groundBounds, buildBounds, safeZone, null);
     }
 
     public BlockBounds groundBounds() {
@@ -35,6 +38,10 @@ public final class Plot {
 
     public BlockBounds buildBounds() {
         return buildBounds;
+    }
+
+    public BlockBounds safeZone() {
+        return safeZone;
     }
 
     public CachedBlocks blocks() {
@@ -55,7 +62,7 @@ public final class Plot {
 
     public void placeBuild(ServerWorld world, StructureTemplate build) {
         world.playSound(null, BlockPos.ofFloored(this.buildBounds.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
-        boolean hasGround = build.getSize().getY() > this.buildBounds.size().getY();
+        boolean hasGround = build.getSize().getY() > this.buildBounds.size().getY() + 1;
         var buildPos = hasGround ? this.groundBounds.min() : this.buildBounds.min();
         build.place(world, buildPos, buildPos, new StructurePlacementData(), world.getRandom(), 2);
 
