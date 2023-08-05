@@ -14,17 +14,17 @@ public class Judge {
     private static final float HEIGHT_ABOVE_PLOT = 50.0f;
     public static final int EXPLOSION_DURATION = 10;
 
-    private final BRRoundManager roundManager;
+    private final RoundManager roundManager;
     private final ElementHolder judgeHolder;
     private BlockDisplayElement judgeElement;
     private int size;
 
-    public Judge(BRRoundManager roundManager, ElementHolder elementHolder) {
+    public Judge(RoundManager roundManager, ElementHolder elementHolder) {
         this.roundManager = roundManager;
         this.judgeHolder = elementHolder;
     }
 
-    public static Judge of(BRRoundManager roundManager, ServerWorld world, Vec3d pos) {
+    public static Judge of(RoundManager roundManager, ServerWorld world, Vec3d pos) {
         var judgeHolder = new ElementHolder();
         ChunkAttachment.of(judgeHolder, world, pos);
         return new Judge(roundManager, judgeHolder);
@@ -38,7 +38,7 @@ public class Judge {
         var stateTick = this.roundManager.getStateTick();
         var currentLength = this.roundManager.getCurrentLength();
 
-        if (state == BRRoundManager.ELIMINATION_START) {
+        if (state == RoundManager.ELIMINATION_START) {
             //stateTick 0 is at BRActive#eliminateLoser
             if(stateTick == 1) {
                 this.nukePlot1();
@@ -55,7 +55,7 @@ public class Judge {
             }
         }
 
-        if (state == BRRoundManager.ELIMINATION) {
+        if (state == RoundManager.ELIMINATION) {
             if(stateTick == 0) {
                 this.smush();
             }

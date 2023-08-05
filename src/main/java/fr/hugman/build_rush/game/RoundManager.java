@@ -3,7 +3,7 @@ package fr.hugman.build_rush.game;
 import fr.hugman.build_rush.game.state.BRActive;
 import net.minecraft.util.math.MathHelper;
 
-public class BRRoundManager {
+public class RoundManager {
     public static final int MEMORIZE_START = 0;
     public static final int MEMORIZE = 1;
     public static final int BUILD = 2;
@@ -19,7 +19,7 @@ public class BRRoundManager {
     private int state;
     private final int[] lengths;
 
-    public BRRoundManager(BRActive active, int memorizeTime, int buildTime) {
+    public RoundManager(BRActive active, int memorizeTime, int buildTime) {
         this.active = active;
         this.number = 1;
         this.stateTick = 0;

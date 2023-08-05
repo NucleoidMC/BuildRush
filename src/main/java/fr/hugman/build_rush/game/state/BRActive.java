@@ -10,7 +10,7 @@ import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.build.BuildUtil;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
-import fr.hugman.build_rush.game.BRRoundManager;
+import fr.hugman.build_rush.game.RoundManager;
 import fr.hugman.build_rush.game.Judge;
 import fr.hugman.build_rush.game.PlayerData;
 import fr.hugman.build_rush.map.BRMap;
@@ -33,7 +33,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -89,7 +88,7 @@ public class BRActive {
     private long tick;
     private long closeTick;
     private long closeTicks;
-    private final BRRoundManager roundManager;
+    private final RoundManager roundManager;
 
     public final Sidebar sidebar;
 
@@ -115,7 +114,7 @@ public class BRActive {
         this.tick = 0;
         this.closeTick = Long.MAX_VALUE;
         this.perfectRoundsInARow = 0;
-        this.roundManager = new BRRoundManager(this, 10, 40);
+        this.roundManager = new RoundManager(this, 10, 40);
 
         this.sidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 
@@ -286,7 +285,7 @@ public class BRActive {
             data.tick();
         }
 
-        var showCountdown = this.roundManager.getState() == BRRoundManager.BUILD || this.roundManager.getState() == BRRoundManager.MEMORIZE;
+        var showCountdown = this.roundManager.getState() == RoundManager.BUILD || this.roundManager.getState() == RoundManager.MEMORIZE;
         var stateTick = this.roundManager.getStateTick();
         var stateTotalTicks = this.roundManager.getLength(this.roundManager.getState());
         var statePercent = (float) stateTick / stateTotalTicks;
@@ -680,6 +679,7 @@ public class BRActive {
     public void resetPlayer(ServerPlayerEntity player, boolean teleport) {
         var data = playerDataMap.get(player.getUuid());
         boolean cannotPlay = data == null || data.eliminated || this.isClosing();
+        boolean hasFinished = (this.roundManager.getState() == RoundManager.BUILD && data != null && data.score == this.maxScore) || this.roundManager.getState() >= RoundManager.BUILD_END;
 
         if (teleport) {
             Vec3d pos;
@@ -704,9 +704,12 @@ public class BRActive {
         }
 
         player.setHealth(20.0f);
-        player.changeGameMode(cannotPlay && !this.isClosing() ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+        player.changeGameMode(!this.isClosing() && (hasFinished || cannotPlay) ? GameMode.SPECTATOR : GameMode.SURVIVAL);
         if (!player.isSpectator()) {
             player.getAbilities().allowFlying = true;
+            if(this.isClosing()) {
+                player.getAbilities().flying = true;
+            }
             player.sendAbilitiesUpdate();
         }
         player.getHungerManager().setFoodLevel(20);
@@ -726,6 +729,7 @@ public class BRActive {
             //TODO: store and send time
             player.sendMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
             player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+            resetPlayer(player, false);
             TextUtil.clearTitle(player);
         }
         this.calcLastPlayer();
@@ -920,6 +924,9 @@ public class BRActive {
         this.canInteract(false);
         this.clearInventory();
         this.judge.spawn();
+        for(var player : this.space.getPlayers()) {
+            this.resetPlayer(player, false);
+        }
     }
 
     public void startElimination() {
