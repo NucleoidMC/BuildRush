@@ -366,6 +366,9 @@ public class BRActive {
         for (var player : this.space.getPlayers()) {
             player.getInventory().clear();
             this.resetPlayer(player, false);
+
+            player.getAbilities().allowFlying = true;
+            player.sendAbilitiesUpdate();
         }
     }
 
@@ -676,11 +679,11 @@ public class BRActive {
 
     public void resetPlayer(ServerPlayerEntity player, boolean teleport) {
         var data = playerDataMap.get(player.getUuid());
-        boolean spectator = data == null || data.eliminated || this.isClosing();
+        boolean cannotPlay = data == null || data.eliminated || this.isClosing();
 
         if (teleport) {
             Vec3d pos;
-            if (spectator) {
+            if (cannotPlay) {
                 pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(centerPlot.groundBounds().center())).toCenterPos();
             } else {
                 data.join(player);
@@ -701,8 +704,8 @@ public class BRActive {
         }
 
         player.setHealth(20.0f);
-        player.changeGameMode(spectator && !this.isClosing() ? GameMode.SPECTATOR : GameMode.SURVIVAL);
-        if (!spectator) {
+        player.changeGameMode(cannotPlay && !this.isClosing() ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+        if (!player.isSpectator()) {
             player.getAbilities().allowFlying = true;
             player.sendAbilitiesUpdate();
         }
