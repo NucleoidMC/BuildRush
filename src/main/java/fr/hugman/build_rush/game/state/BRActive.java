@@ -10,17 +10,17 @@ import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.build.BuildUtil;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
-import fr.hugman.build_rush.game.RoundManager;
 import fr.hugman.build_rush.game.Judge;
 import fr.hugman.build_rush.game.PlayerData;
+import fr.hugman.build_rush.game.RoundManager;
 import fr.hugman.build_rush.map.BRMap;
 import fr.hugman.build_rush.map.Plot;
 import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import fr.hugman.build_rush.song.SongManager;
 import fr.hugman.build_rush.text.TextUtil;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
+import net.minecraft.block.*;
+import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.damage.DamageTypes;
@@ -116,7 +116,7 @@ public class BRActive {
 
         this.tick = 0;
         this.closeTick = Long.MAX_VALUE;
-        this.shouldClose= false;
+        this.shouldClose = false;
         this.roundManager = new RoundManager(this, 10, 40);
 
         this.sidebar = new Sidebar(Sidebar.Priority.MEDIUM);
@@ -299,10 +299,10 @@ public class BRActive {
 
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
-            if(!player.isSpectator() && this.canInteractWithWorld) {
+            if (!player.isSpectator() && this.canInteractWithWorld) {
                 // if the player is in another's safe zone, teleport them back to their own plot
-                for(var otherData : this.playerDataMap.values()) {
-                    if(otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
+                for (var otherData : this.playerDataMap.values()) {
+                    if (otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
                         resetPlayer(player, true);
                         player.sendMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
                         player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.PLAYERS, 1, 1);
@@ -535,10 +535,10 @@ public class BRActive {
     /*=============*/
 
     private ActionResult onWorldInteraction(@Nullable ServerPlayerEntity player, BlockPos pos) {
-        return canInteractWithWorld(player, pos) ? ActionResult.SUCCESS : ActionResult.FAIL;
+        return canInteractWithWorldAt(player, pos) ? ActionResult.SUCCESS : ActionResult.FAIL;
     }
 
-    private boolean canInteractWithWorld(@Nullable ServerPlayerEntity player, BlockPos pos) {
+    private boolean canInteractWithWorldAt(@Nullable PlayerEntity player, BlockPos pos) {
         if (!this.canInteractWithWorld) {
             BuildRush.debug("interactWithWorld: cannot build");
             return false;
@@ -571,12 +571,25 @@ public class BRActive {
         return true;
     }
 
-    private ActionResult onBlockUsed(BlockState state, World world, BlockPos blockPos, PlayerEntity playerEntity, Hand hand, BlockHitResult blockHitResult) {
-        return ActionResult.FAIL;
+    private ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity, Hand hand, BlockHitResult blockHitResult) {
+        var blockEntity = world.getBlockEntity(pos);
+        var block = state.getBlock();
+
+        if (!this.canInteractWithWorldAt(playerEntity, pos))
+            return ActionResult.FAIL;
+        if (block instanceof ButtonBlock ||
+                blockEntity instanceof LockableContainerBlockEntity ||
+                block instanceof ComposterBlock ||
+                block instanceof AnvilBlock||
+                block instanceof EnchantingTableBlock||
+                block instanceof GrindstoneBlock) {
+            return ActionResult.FAIL;
+        }
+        return ActionResult.PASS;
     }
 
     private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-        if (canInteractWithWorld(player, pos)) {
+        if (canInteractWithWorldAt(player, pos)) {
 			/*
 			  This currently doesn't work very well, so I'm disabling it for now
 			  If you hold the click it won't break the second block if you're still holding the click
@@ -710,7 +723,7 @@ public class BRActive {
         player.changeGameMode(!this.isClosing() && (hasFinished || cannotPlay) ? GameMode.SPECTATOR : GameMode.SURVIVAL);
         if (!player.isSpectator()) {
             player.getAbilities().allowFlying = true;
-            if(this.isClosing()) {
+            if (this.isClosing()) {
                 player.getAbilities().flying = true;
             }
             player.sendAbilitiesUpdate();
@@ -826,8 +839,8 @@ public class BRActive {
         }
 
         // if the player is inside a block, teleport them
-        for(var player : this.space.getPlayers()) {
-            if(player.isSpectator()) {
+        for (var player : this.space.getPlayers()) {
+            if (player.isSpectator()) {
                 continue;
             }
             if (!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
@@ -924,7 +937,7 @@ public class BRActive {
         this.canInteract(false);
         this.clearInventory();
         this.judge.spawn();
-        for(var player : this.space.getPlayers()) {
+        for (var player : this.space.getPlayers()) {
             this.resetPlayer(player, false);
         }
     }
@@ -990,7 +1003,7 @@ public class BRActive {
             perfectRoundsInARow = 0;
 
             // play an explosion sound and particles
-            this.world.playSound(null, BlockPos.ofFloored(loserData.plot.buildBounds().center()), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f, 1.0f);
+            this.world.playSound(null, BlockPos.ofFloored(loserData.plot.buildBounds().center()), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f * this.size, 1.0f);
             this.world.spawnParticles(ParticleTypes.EXPLOSION,
                     loserData.plot.buildBounds().center().getX(), loserData.plot.buildBounds().center().getY(), loserData.plot.buildBounds().center().getZ(), 10,
                     this.size / 1.5f, this.size / 1.5f, this.size / 1.5f, 0.0);
@@ -1002,7 +1015,7 @@ public class BRActive {
     public void endRound() {
         // TODO: send round results?
         this.judge.remove();
-        if(this.shouldClose) {
+        if (this.shouldClose) {
             this.removePlayerBuilds();
             for (var playerData : this.playerDataMap.values()) {
                 if (playerData.eliminated) {

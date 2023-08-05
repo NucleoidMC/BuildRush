@@ -8,6 +8,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
+import net.minecraft.block.enums.WallMountLocation;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
@@ -15,8 +16,10 @@ import net.minecraft.item.Items;
 import net.minecraft.item.SkullItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +28,25 @@ import java.util.List;
 
 public class BuildUtil {
 	public static boolean areEqual(BlockState sourceState, @Nullable NbtCompound sourceNbt, BlockState targetState, @Nullable NbtCompound targetNbt) {
+		var sourceBlock = sourceState.getBlock();
+		var targetBlock = targetState.getBlock();
+
+		if(sourceBlock != targetBlock) return false;
+
+		if(sourceBlock instanceof ButtonBlock) {
+			if(sourceState.get(ButtonBlock.FACE) == WallMountLocation.WALL) {
+				return sourceState.get(ButtonBlock.FACING) == targetState.get(ButtonBlock.FACING);
+			}
+
+			if((sourceState.get(ButtonBlock.FACING) == Direction.NORTH && targetState.get(ButtonBlock.FACING) == Direction.SOUTH) ||
+					(sourceState.get(ButtonBlock.FACING) == Direction.SOUTH && targetState.get(ButtonBlock.FACING) == Direction.NORTH) ||
+					(sourceState.get(ButtonBlock.FACING) == Direction.EAST && targetState.get(ButtonBlock.FACING) == Direction.WEST) ||
+					(sourceState.get(ButtonBlock.FACING) == Direction.WEST && targetState.get(ButtonBlock.FACING) == Direction.EAST))
+				return true;
+
+			return sourceState.get(ButtonBlock.FACING) == targetState.get(ButtonBlock.FACING);
+		}
+
 		return sourceState.equals(targetState);
 	}
 
