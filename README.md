@@ -8,6 +8,14 @@ You can view many examples of games implemented with Plasmid on the [Nucleoid Gi
 You may even be interested in playing some of them over on our testing Minecraft server at `nucleoid.xyz`!
 You can also find us on our [Discord](https://nucleoid.xyz/discord) if you have any troubles or queries, or would like to get involved.
 
+## Installation
+
+Build Rush can be installed on a client or a server. As this is a multiplayer minigame though, it is recommended to install it on a server.
+
+⚠ Build Rush **needs** the following mods to be installed:
+- Plasmid: [GitHub](https://github.com/NucleoidMC/plasmid)/[Modrinth](https://modrinth.com/mod/plasmid)
+- Fabric API: [GitHub](https://github.com/FabricMC/fabric) / [CurseForge](https://www.curseforge.com/minecraft/mc-mods/fabric-api) / [Modrinth](https://modrinth.com/mod/fabric-api)
+
 ## Usage
 
 To start a game of Build Rush, use `/game open build_rush:small/random`.

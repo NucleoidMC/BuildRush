@@ -1,13 +1,19 @@
 {
   "schemaVersion": 1,
+  "name": "Build Rush",
   "id": "build_rush",
   "version": "${version}",
-  "name": "Build Rush",
+  "icon": "assets/build_rush/logo.png",
   "description": "Build memorizing minigame for Minecraft!",
   "authors": [
     "Napero",
     "Hugman"
   ],
+  "contact": {
+    "homepage": "https://nucleoid.xyz/",
+    "sources": "https://github.com/NucleoidMC/BuildRush",
+    "issues": "https://github.com/NucleoidMC/BuildRush/issues"
+  },
   "license": "LGPL-3.0-or-later",
   "environment": "*",
   "entrypoints": {
@@ -22,7 +28,15 @@
     "java": ">=17",
     "minecraft": ">=1.19.3",
     "fabricloader": ">=0.9.1",
-    "fabric": "*",
-    "plasmid": "0.5.x"
+    "fabric-api": ">=0.86.1",
+    "plasmid": ">=0.5.x"
+  },
+  "mc-publish": {
+    "curseforge": 899402,
+    "modrinth": "uXPof89h",
+    "loaders": [
+      "fabric",
+      "quilt"
+    ]
   }
 }
