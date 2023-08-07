@@ -1,0 +1,33 @@
+{
+  "type": "nucleoid_extras:styled/advanced_menu",
+  "name": {
+    "translate": "game.build_rush.small"
+  },
+  "icon": "minecraft:clock",
+  "entries": [
+    {
+      "type": "plasmid:on_demand",
+      "icon": "minecraft:compass",
+      "game": "build_rush:small/random",
+      "name": {
+        "translate": "game.nucleoid.random"
+      }
+    },
+    {
+      "type": "plasmid:on_demand",
+      "icon": "minecraft:dripstone_block",
+      "game": "build_rush:small/rock_candy_mines",
+      "name": {
+        "translate": "map.build_rush.rock_candy_mines"
+      }
+    },
+    {
+      "type": "plasmid:on_demand",
+      "icon": "minecraft:sandstone_wall",
+      "game": "build_rush:small/rock_candy_mines",
+      "name": {
+        "translate": "map.build_rush.minuscule_memories"
+      }
+    }
+  ]
+}

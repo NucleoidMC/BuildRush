@@ -1,0 +1,13 @@
+{
+  "type": "nucleoid_extras:styled/advanced_menu",
+  "name": {
+    "translate": "game.build_rush"
+  },
+  "icon": "minecraft:clock",
+  "entries": [
+    {
+      "type": "plasmid:portal",
+      "portal": "build_rush:small"
+    }
+  ]
+}
