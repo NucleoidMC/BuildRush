@@ -13,7 +13,7 @@ You can also find us on our [Discord](https://nucleoid.xyz/discord) if you have 
 Build Rush can be installed on a client or a server. As this is a multiplayer minigame though, it is recommended to install it on a server.
 
 ⚠ Build Rush **needs** the following mods to be installed:
-- Plasmid: [GitHub](https://github.com/NucleoidMC/plasmid)/[Modrinth](https://modrinth.com/mod/plasmid)
+- Plasmid: [GitHub](https://github.com/NucleoidMC/plasmid) / [Modrinth](https://modrinth.com/mod/plasmid)
 - Fabric API: [GitHub](https://github.com/FabricMC/fabric) / [CurseForge](https://www.curseforge.com/minecraft/mc-mods/fabric-api) / [Modrinth](https://modrinth.com/mod/fabric-api)
 
 ## Usage
