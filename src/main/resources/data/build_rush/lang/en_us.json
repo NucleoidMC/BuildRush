@@ -41,6 +41,7 @@
   "error.build_rush.map.plots.not_enough": "Not enough regions 'plot' (found %d/%d, as per the game's player configuration)",
   "error.build_rush.build.none": "No builds are available",
   "error.build_rush.build.none.weird": "No builds are available (what?)",
+  "error.build_rush.tag.generic.not_found": "The '#build_rush:generic' tag was not found",
 
   "build.a_very_serious_guy": "A Very Serious Guy",
   "build.amethyst_geode": "Amethyst Geode",

@@ -22,6 +22,5 @@
     },
     "nametag_offset": 5,
     "nametag_size": 7
-  },
-  "builds": "#build_rush:generic"
+  }
 }
