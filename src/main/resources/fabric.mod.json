@@ -31,12 +31,14 @@
     "fabric-api": ">=0.86.1",
     "plasmid": ">=0.5.x"
   },
-  "mc-publish": {
-    "curseforge": 899402,
-    "modrinth": "uXPof89h",
-    "loaders": [
-      "fabric",
-      "quilt"
-    ]
+  "custom": {
+    "mc-publish": {
+      "curseforge": 899402,
+      "modrinth": "uXPof89h",
+      "loaders": [
+        "fabric",
+        "quilt"
+      ]
+    }
   }
-}
+},
