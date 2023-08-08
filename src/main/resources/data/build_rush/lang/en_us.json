@@ -8,9 +8,6 @@
   "game.build_rush.huge.with_map": "Build Rush: Huge - %s",
   "game.build_rush.flags.signal": "Build Rush: Signal Flags",
 
-  "map.build_rush.rock_candy_mines": "Rock-Candy Mines",
-  "map.build_rush.minuscule_memories": "Minuscule Memories",
-
   "generic.build_rush.score": "%d%%",
 
   "text.build_rush.eliminated": "%s has been eliminated! They got a %s percent correct build.",
@@ -42,6 +39,14 @@
   "error.build_rush.build.none": "No builds are available",
   "error.build_rush.build.none.weird": "No builds are available (what?)",
   "error.build_rush.tag.generic.not_found": "The '#build_rush:generic' tag was not found",
+
+  "statistic.bundle.build_rush": "Build Rush",
+  "statistic.build_rush.survived_rounds": "Survived rounds",
+  "statistic.build_rush.perfect_rounds": "Perfect rounds",
+  "statistic.build_rush.total_rounds": "Total rounds",
+
+  "map.build_rush.rock_candy_mines": "Rock-Candy Mines",
+  "map.build_rush.minuscule_memories": "Minuscule Memories",
 
   "build.a_very_serious_guy": "A Very Serious Guy",
   "build.amethyst_geode": "Amethyst Geode",

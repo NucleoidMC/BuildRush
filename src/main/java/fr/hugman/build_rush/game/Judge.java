@@ -93,14 +93,12 @@ public class Judge {
     }
 
     public void spawn() {
+        this.remove();
+        this.offset = new Vector3f(0, 0, 0);
         this.judgeElement = new BlockDisplayElement(Blocks.TNT.getDefaultState());
         this.judgeElement.setTranslation(new Vector3f(-1.5f, -1.5f, -1.5f));
         this.judgeElement.setScale(new Vector3f(3, 3, 3));
-        for (var element : this.judgeHolder.getElements()) {
-            this.judgeHolder.removeElement(element);
-        }
         this.judgeHolder.addElement(this.judgeElement);
-        this.offset = new Vector3f(0, 0, 0);
     }
 
     public void setPlot(Plot plot) {

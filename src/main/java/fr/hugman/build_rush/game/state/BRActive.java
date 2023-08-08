@@ -51,12 +51,10 @@ import org.joml.Vector3f;
 import xyz.nucleoid.plasmid.game.GameCloseReason;
 import xyz.nucleoid.plasmid.game.GameOpenException;
 import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.GameSpaceStatistics;
 import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
 import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.game.rule.GameRuleType;
 import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
-import xyz.nucleoid.plasmid.game.stats.StatisticKeys;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
@@ -425,7 +423,6 @@ public class BRActive {
         data.score = 0;
         data.eliminated = true;
         data.setNameHologramColor(TextUtil.NEUTRAL_S);
-        //TODO: play breaking sound
         if (player != null) {
             this.resetPlayer(player, false);
             String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
@@ -585,8 +582,8 @@ public class BRActive {
         if (block instanceof ButtonBlock ||
                 blockEntity instanceof LockableContainerBlockEntity ||
                 block instanceof ComposterBlock ||
-                block instanceof AnvilBlock||
-                block instanceof EnchantingTableBlock||
+                block instanceof AnvilBlock ||
+                block instanceof EnchantingTableBlock ||
                 block instanceof GrindstoneBlock) {
             return ActionResult.FAIL;
         }
@@ -753,7 +750,6 @@ public class BRActive {
             resetPlayer(player, false);
             TextUtil.clearTitle(player);
         }
-        this.calcLastPlayer();
 
         // If all players have finished, skip the round
         for (var otherData : this.playerDataMap.values()) {
@@ -802,10 +798,7 @@ public class BRActive {
         return score;
     }
 
-    /**
-     * @return 0 if there is an error, 1 if there is a last player, 2 if there is no last player (everyone got perfect)
-     */
-    public int calcLastPlayer() {
+    public void calcLastPlayer() {
         int fewestScore = Integer.MAX_VALUE;
         UUID uuid = null;
         for (var u : this.playerDataMap.keySet()) {
@@ -816,17 +809,15 @@ public class BRActive {
             }
         }
         if (fewestScore == this.maxScore) {
-            //TODO: check for time
-            loserUuid = null;
-            return 2;
+            this.loserUuid = null;
+            return;
         }
         if (uuid == null) {
             BuildRush.LOGGER.error("Tried to eliminate last player but no players were found!");
-            loserUuid = null;
-            return 0;
+            this.loserUuid = null;
+            return;
         }
-        loserUuid = uuid;
-        return 1;
+        this.loserUuid = uuid;
     }
 
     /* ================= */
@@ -959,7 +950,24 @@ public class BRActive {
                 data.setNameHologramColor(TextUtil.lerpScoreColor((float) data.score / this.maxScore));
             }
         }
-        int calc = this.calcLastPlayer();
+        this.calcLastPlayer();
+
+        // calculate stats
+        for (var entry : this.playerDataMap.entrySet()) {
+            var uuid = entry.getKey();
+            var data = entry.getValue();
+
+            if (!data.eliminated && uuid != this.loserUuid) {
+                this.statistics.forPlayer(uuid).increment(BRStatistics.SURVIVED_ROUNDS, 1);
+                if (data.score == this.maxScore) {
+                    this.statistics.forPlayer(uuid).increment(BRStatistics.PERFECT_ROUNDS, 1);
+                }
+            }
+        }
+        this.statistics.global().increment(BRStatistics.TOTAL_ROUNDS, 1);
+        if (this.loserUuid == null) {
+            this.perfectRoundsInARow++;
+        }
 
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
@@ -970,7 +978,6 @@ public class BRActive {
             if (data.score == this.maxScore) {
                 TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
                 player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
-                this.statistics.forPlayer(player).increment(BRStatistics.TOTAL_PERFECT_BUILDS, 1);
             } else {
                 float scorePercentage = data.score / (float) this.maxScore;
                 String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
@@ -983,22 +990,20 @@ public class BRActive {
             }
         }
 
-        if (calc == 1) {
+        if (this.loserUuid == null) {
+            this.judge.remove();
+        } else {
             var loserData = this.playerDataMap.get(this.loserUuid);
             this.judge.setPlot(loserData.plot);
             this.judge.setAbovePlot();
-        } else {
-            this.judge.remove();
         }
     }
 
     public void eliminateLoser() {
-        int result = this.calcLastPlayer();
-        if (result == 2) {
+        if (this.loserUuid == null) {
             this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
             this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
-            perfectRoundsInARow++;
-        } else if (result == 1) {
+        } else {
             var loserData = this.playerDataMap.get(this.loserUuid);
             if (loserData == null) {
                 BuildRush.LOGGER.error("Tried to eliminate last player but the player's data was not found!");
