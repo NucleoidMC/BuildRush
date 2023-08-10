@@ -6,7 +6,7 @@
   "icon": "minecraft:clock",
   "entries": [
     {
-      "type": "plasmid:on_demand",
+      "type": "plasmid:game",
       "icon": "minecraft:compass",
       "game": "build_rush:small/random",
       "name": {
@@ -14,7 +14,7 @@
       }
     },
     {
-      "type": "plasmid:on_demand",
+      "type": "plasmid:game",
       "icon": "minecraft:dripstone_block",
       "game": "build_rush:small/rock_candy_mines",
       "name": {
@@ -22,7 +22,7 @@
       }
     },
     {
-      "type": "plasmid:on_demand",
+      "type": "plasmid:game",
       "icon": "minecraft:sandstone_wall",
       "game": "build_rush:small/minuscule_memories",
       "name": {
