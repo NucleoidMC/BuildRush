@@ -4,7 +4,6 @@ Build Rush is a build memorizing minigame for Minecraft!
 The goal is to memorize a structure and then rebuild it as fast and as correct as possible.
 
 Build Rush is one of the minigames made for the [Nucleoid Project](https://nucleoid.xyz/), an effort to build an open source ecosystem for server-side Minecraft minigames.
-You can view many examples of games implemented with Plasmid on the [Nucleoid GitHub Organisation](https://github.com/NucleoidMC).
 You may even be interested in playing some of them over on our testing Minecraft server at `nucleoid.xyz`!
 You can also find us on our [Discord](https://nucleoid.xyz/discord) if you have any troubles or queries, or would like to get involved.
 

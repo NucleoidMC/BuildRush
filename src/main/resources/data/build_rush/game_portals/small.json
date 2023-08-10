@@ -24,7 +24,7 @@
     {
       "type": "plasmid:on_demand",
       "icon": "minecraft:sandstone_wall",
-      "game": "build_rush:small/rock_candy_mines",
+      "game": "build_rush:small/minuscule_memories",
       "name": {
         "translate": "map.build_rush.minuscule_memories"
       }
