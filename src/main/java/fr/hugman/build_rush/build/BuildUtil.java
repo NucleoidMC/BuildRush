@@ -61,6 +61,10 @@ public class BuildUtil {
 		var pickStack = block.getPickStack(world, pos, state);
 		stacks.add(pickStack);
 
+		if(state.isAir()) {
+			return List.of();
+		}
+
 		// Multipart blocks
 		if(state.contains(Properties.DOUBLE_BLOCK_HALF)) {
 			if(state.get(Properties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
