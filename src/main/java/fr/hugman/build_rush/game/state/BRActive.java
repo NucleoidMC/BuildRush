@@ -749,15 +749,20 @@ public class BRActive {
 
     public void calcLastPlayer() {
         int fewestScore = Integer.MAX_VALUE;
+        int scoreCount = 0;
         UUID uuid = null;
         for (var u : this.playerDataMap.keySet()) {
             var d = this.playerDataMap.get(u);
             if (d != null && !d.eliminated && d.score <= fewestScore) {
-                fewestScore = d.score;
-                uuid = u;
+                if (d.score < fewestScore) {
+                    fewestScore = d.score;
+                    uuid = u;
+                    scoreCount = 0;
+                }
+                scoreCount += 1;
             }
         }
-        if (fewestScore == this.maxScore) {
+        if (fewestScore == this.maxScore || (scoreCount > 1 && fewestScore > 0)) {
             this.loserUuid = null;
             return;
         }
