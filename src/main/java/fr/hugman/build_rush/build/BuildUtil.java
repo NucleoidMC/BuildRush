@@ -6,17 +6,16 @@ import fr.hugman.build_rush.registry.tag.BRTags;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.enums.BedPart;
+import net.minecraft.block.enums.BlockFace;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
-import net.minecraft.block.enums.WallMountLocation;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.SkullItem;
+import net.minecraft.item.PlayerHeadItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -34,7 +33,7 @@ public class BuildUtil {
 		if(sourceBlock != targetBlock) return false;
 
 		if(sourceBlock instanceof ButtonBlock) {
-			if(sourceState.get(ButtonBlock.FACE) == WallMountLocation.WALL) {
+			if(sourceState.get(ButtonBlock.FACE) == BlockFace.WALL) {
 				return sourceState.get(ButtonBlock.FACING) == targetState.get(ButtonBlock.FACING);
 			}
 
@@ -185,7 +184,7 @@ public class BuildUtil {
 	public static void addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {
 		NbtCompound nbtCompound = blockEntity.createNbtWithIdentifyingData();
 		BlockItem.setBlockEntityNbt(stack, blockEntity.getType(), nbtCompound);
-		if (stack.getItem() instanceof SkullItem && nbtCompound.contains("SkullOwner")) {
+		if (stack.getItem() instanceof PlayerHeadItem && nbtCompound.contains("SkullOwner")) {
 			NbtCompound nbtCompound2 = nbtCompound.getCompound("SkullOwner");
 			NbtCompound nbtCompound3 = stack.getOrCreateNbt();
 			nbtCompound3.put("SkullOwner", nbtCompound2);

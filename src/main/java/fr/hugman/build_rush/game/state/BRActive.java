@@ -272,6 +272,7 @@ public class BRActive {
         }
 
         this.songManager.addPlayers(this.space.getPlayers());
+        this.songManager.setVolume((byte) 80);
         this.songManager.setPlaying(true);
     }
 
@@ -279,7 +280,7 @@ public class BRActive {
         this.tick++;
         if (this.isClosing()) {
             var progress = (float) (this.closeTick - this.tick) / this.closeTicks;
-            this.songManager.setVolume((byte) (progress * 100));
+            this.songManager.setVolume((byte) (progress * 80));
             if (this.tick >= this.closeTick) {
                 this.space.close(GameCloseReason.FINISHED);
             }
