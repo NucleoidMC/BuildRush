@@ -7,6 +7,7 @@ import eu.pb4.sidebars.api.Sidebar;
 import fr.hugman.build_rush.BRConfig;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.build.Build;
+import fr.hugman.build_rush.build.BuildItemCollector;
 import fr.hugman.build_rush.build.BuildUtil;
 import fr.hugman.build_rush.event.UseEvents;
 import fr.hugman.build_rush.event.WorldBlockBreakEvent;
@@ -28,7 +29,6 @@ import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.decoration.DisplayEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -471,45 +471,32 @@ public class BRActive {
                 continue;
             }
             for (var stack : buildItems) {
-                this.give(player, stack, false);
+                this.give(player, stack, null, false);
             }
         }
     }
 
     public void giveBlock(PlayerEntity player, BlockPos pos) {
-        var stacks = BuildUtil.stacksForBlock(world, pos);
+        var collector = new BuildItemCollector();
+        collector.accept(this.world, pos);
+
+        var stacks = collector.getStacks();
         if (stacks.isEmpty()) {
             return;
         }
         var firstStack = stacks.get(0);
 
-        this.give(player, firstStack, true);
+        this.give(player, firstStack, collector, true);
         for (int i = 1; i < stacks.size(); i++) {
-            this.give(player, stacks.get(i), false);
+            this.give(player, stacks.get(i), collector, false);
         }
     }
 
-    public void give(PlayerEntity player, ItemStack stack, boolean giveToHand) {
-        if (stack.isOf(Items.FLINT_AND_STEEL)) {
-            // only give it if they don't have it already
-            for (var item : player.getInventory().main) {
-                if (item.isOf(Items.FLINT_AND_STEEL)) {
-                    return;
-                }
-            }
-            if (player.getInventory().offHand.get(0).isOf(Items.FLINT_AND_STEEL)) {
-                return;
-            }
+    public void give(PlayerEntity player, ItemStack stack, @Nullable BuildItemCollector collector, boolean giveToHand) {
+        if (collector != null && collector.isSingletonStack(stack) && player.getInventory().contains(stack)) {
+            return;
         }
 
-        if (stack.isOf(Items.WATER_BUCKET)) {
-            // only give it if they don't have it already
-            for (var item : player.getInventory().main) {
-                if (item.isOf(Items.WATER_BUCKET)) {
-                    return;
-                }
-            }
-        }
         if (giveToHand) {
             var slot = player.getInventory().selectedSlot;
             var oldStack = player.getInventory().getStack(slot);
@@ -774,10 +761,14 @@ public class BRActive {
      */
     public void calcInventory() {
         this.buildItems.clear();
+
+        var collector = new BuildItemCollector();
+
         for (var pos : this.centerPlot.buildBounds()) {
-            var stacks = BuildUtil.stacksForBlock(world, pos);
-            this.buildItems.addAll(stacks);
+            collector.accept(this.world, pos);
         }
+
+        this.buildItems.addAll(collector.getStacks());
     }
 
     public int calcPlayerScore(PlayerData playerData) {
