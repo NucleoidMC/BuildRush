@@ -12,10 +12,10 @@ import net.minecraft.world.World;
 import xyz.nucleoid.stimuli.event.StimulusEvent;
 
 public class UseEvents {
-	public static final StimulusEvent<UseBlockEvent> BLOCK = StimulusEvent.create(UseBlockEvent.class, ctx -> (state, world, pos, player, hand, hit) -> {
+	public static final StimulusEvent<UseBlockEvent> BLOCK = StimulusEvent.create(UseBlockEvent.class, ctx -> (state, world, pos, player, hit) -> {
 		try {
 			for(var listener : ctx.getListeners()) {
-				var result = listener.onBlockUsed(state, world, pos, player, hand, hit);
+				var result = listener.onBlockUsed(state, world, pos, player, hit);
 				if(result != ActionResult.PASS) {
 					return result;
 				}
@@ -41,7 +41,7 @@ public class UseEvents {
 	});
 
 	public interface UseBlockEvent {
-		ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit);
+		ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit);
 	}
 
 	public interface UseItemOnBlockEvent {

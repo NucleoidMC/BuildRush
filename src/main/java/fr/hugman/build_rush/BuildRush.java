@@ -7,7 +7,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import xyz.nucleoid.plasmid.game.GameType;
+import xyz.nucleoid.plasmid.api.game.GameType;
 
 public class BuildRush implements ModInitializer {
 	public static final String ID = "build_rush";
@@ -20,7 +20,7 @@ public class BuildRush implements ModInitializer {
 	}
 
 	public static Identifier id(String s) {
-		return new Identifier(ID, s);
+		return Identifier.of(ID, s);
 	}
 
 	public static void debug(String s) {

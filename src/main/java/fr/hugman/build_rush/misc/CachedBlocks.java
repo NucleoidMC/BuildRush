@@ -34,7 +34,7 @@ public class CachedBlocks {
 					// nbt
 					var sourceEntity = world.getBlockEntity(sourcePos);
 					if (sourceEntity != null) {
-						var sourceNbt = sourceEntity.createNbt();
+						var sourceNbt = sourceEntity.createNbt(world.getRegistryManager());
 						nbt.put(targetPos, sourceNbt);
 					}
 				}
@@ -55,7 +55,7 @@ public class CachedBlocks {
 			var nbt = entry.getValue();
 			var entity = world.getBlockEntity(targetPos);
 			if (entity != null) {
-				entity.readNbt(nbt);
+				entity.read(nbt, world.getRegistryManager());
 			}
 		}
 	}

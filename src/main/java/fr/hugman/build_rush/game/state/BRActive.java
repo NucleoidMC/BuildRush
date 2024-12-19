@@ -18,7 +18,6 @@ import fr.hugman.build_rush.map.BRMap;
 import fr.hugman.build_rush.map.Plot;
 import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
-import fr.hugman.build_rush.song.SongManager;
 import fr.hugman.build_rush.statistics.BRStatistics;
 import fr.hugman.build_rush.text.TextUtil;
 import net.minecraft.block.*;
@@ -48,20 +47,21 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
-import xyz.nucleoid.plasmid.game.GameCloseReason;
-import xyz.nucleoid.plasmid.game.GameOpenException;
-import xyz.nucleoid.plasmid.game.GameSpace;
-import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
-import xyz.nucleoid.plasmid.game.rule.GameRuleType;
-import xyz.nucleoid.plasmid.game.stats.GameStatisticBundle;
+import xyz.nucleoid.plasmid.api.game.GameCloseReason;
+import xyz.nucleoid.plasmid.api.game.GameOpenException;
+import xyz.nucleoid.plasmid.api.game.GameSpace;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
+import xyz.nucleoid.plasmid.api.game.stats.GameStatisticBundle;
+import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
 import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,10 +97,9 @@ public class BRActive {
 
     public final Judge judge;
 
-    public final SongManager songManager;
     public final GameStatisticBundle statistics;
 
-    public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds, SongManager songManager) {
+    public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds) {
         this.world = world;
         this.config = config;
         this.space = space;
@@ -126,7 +125,6 @@ public class BRActive {
 
         this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center().add(0, size + 3, 0));
 
-        this.songManager = songManager;
         this.statistics = space.getStatistics().bundle(BuildRush.ID);
     }
 
@@ -134,40 +132,7 @@ public class BRActive {
         var centerPlot = map.centerPlot();
         var size = centerPlot.buildBounds().size().getX() + 1;
 
-        var songManager = new SongManager(space);
-
-        try {
-            songManager.addSongs(
-                    BuildRush.id("super_bell_hill"),
-                    BuildRush.id("bob_omb_battlefield"),
-                    BuildRush.id("nsmb_castle"),
-                    BuildRush.id("dire_dire_docks"),
-                    BuildRush.id("space_junk_galaxy"),
-                    BuildRush.id("mk8_rainbow_road"),
-                    BuildRush.id("smm_title"),
-                    BuildRush.id("the_grand_finale"),
-                    BuildRush.id("gang_plank_galleon"),
-                    BuildRush.id("zelda_lullaby"),
-                    BuildRush.id("driftveil_city"),
-                    BuildRush.id("green_greens"),
-                    BuildRush.id("deluge_dirge"),
-                    BuildRush.id("spiral_mountain"),
-                    BuildRush.id("clanker_cavern"),
-                    BuildRush.id("walrus_cove"),
-                    BuildRush.id("life_will_change"),
-                    BuildRush.id("asgore"),
-                    BuildRush.id("fields_of_hopes_and_dreams"),
-                    BuildRush.id("rude_buster"),
-                    BuildRush.id("menu_ssb4"),
-                    BuildRush.id("lifelight"),
-                    BuildRush.id("death_wish"),
-                    BuildRush.id("rush_hour")
-            );
-        } catch (IOException e) {
-            throw new GameOpenException(Text.of("Could not find songs"), e);
-        }
-
-        BRActive active = new BRActive(world, space, config, size, centerPlot, builds, songManager);
+        BRActive active = new BRActive(world, space, config, size, centerPlot, builds);
 
         space.setActivity(activity -> {
             activity.deny(GameRuleType.BREAK_BLOCKS);
@@ -189,7 +154,8 @@ public class BRActive {
             activity.listen(GameActivityEvents.TICK, active::tick);
             activity.listen(GameActivityEvents.DESTROY, active::onClose);
 
-            activity.listen(GamePlayerEvents.OFFER, offer -> offer.accept(world, centerPlot.groundBounds().center()));
+            activity.listen(GamePlayerEvents.OFFER, JoinOffer::accept);
+            activity.listen(GamePlayerEvents.ACCEPT, offer -> offer.teleport(world, centerPlot.groundBounds().center()));
             activity.listen(GamePlayerEvents.ADD, active::addPlayer);
             activity.listen(GamePlayerEvents.REMOVE, active::removePlayer);
 
@@ -197,11 +163,11 @@ public class BRActive {
                 if (source.isOf(DamageTypes.OUT_OF_WORLD)) {
                     active.resetPlayer(player, true);
                 }
-                return ActionResult.FAIL;
+                return EventResult.DENY;
             });
             activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
                 active.resetPlayer(player, true);
-                return ActionResult.FAIL;
+                return EventResult.DENY;
             });
             activity.listen(BlockPlaceEvent.BEFORE, (player, world1, pos, state, context) -> active.onWorldInteraction(player, pos));
             activity.listen(BlockPlaceEvent.AFTER, (player, world1, pos, state) -> active.onBlockPlaced(player));
@@ -210,7 +176,7 @@ public class BRActive {
             activity.listen(WorldBlockBreakEvent.EVENT, active::onBlockBroken);
             activity.listen(UseEvents.BLOCK, active::onBlockUsed);
             activity.listen(UseEvents.ITEM_ON_BLOCK, (stack, context) ->
-                    active.onWorldInteraction((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector()))
+                    active.onWorldInteraction((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector())).asActionResult()
             );
         });
 
@@ -270,17 +236,12 @@ public class BRActive {
             this.resetPlayer(player, true);
             this.sidebar.addPlayer(player);
         }
-
-        this.songManager.addPlayers(this.space.getPlayers());
-        this.songManager.setVolume((byte) 80);
-        this.songManager.setPlaying(true);
     }
 
     public void tick() {
         this.tick++;
         if (this.isClosing()) {
             var progress = (float) (this.closeTick - this.tick) / this.closeTicks;
-            this.songManager.setVolume((byte) (progress * 80));
             if (this.tick >= this.closeTick) {
                 this.space.close(GameCloseReason.FINISHED);
             }
@@ -310,7 +271,7 @@ public class BRActive {
                     if (otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
                         resetPlayer(player, true);
                         player.sendMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
-                        player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.PLAYERS, 1, 1);
+                        player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), 1, 1);
                         break;
                     }
                 }
@@ -342,18 +303,18 @@ public class BRActive {
                                 }
                                 if (stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
                                     TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
-                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.3f);
+                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1.3f);
                                 }
                                 if (stateSeconds <= 5) {
                                     TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
-                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1.6f);
+                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1.6f);
                                 }
                             } else {
                                 data.bar.setColor(BossBar.Color.GREEN);
                             }
                             if (stateSeconds == 0 && (stateMinutes == 1 || stateMinutes == 2)) {
                                 TextUtil.sendSubtitle(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
-                                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.MASTER, 1, 1);
+                                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1);
                             }
                         }
                         data.bar.setPercent(statePercent);
@@ -392,7 +353,6 @@ public class BRActive {
             }
             this.sidebar.removePlayer(player);
         }
-        this.songManager.destroy();
     }
 
     public void canInteract(boolean canBuild) {
@@ -434,7 +394,7 @@ public class BRActive {
             player.sendMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated.self", player.getName().getString()));
             TextUtil.clearSubtitle(player);
             TextUtil.sendTitle(player, TextUtil.translatable(TextUtil.DANGER, "title.build_rush.eliminated"), 0, 5 * 20, 20);
-            player.playSound(SoundEvents.ENTITY_BLAZE_DEATH, SoundCategory.MASTER, 1, 2f);
+            player.playSound(SoundEvents.ENTITY_BLAZE_DEATH, 1, 2f);
         }
         this.refreshSidebar();
 
@@ -524,8 +484,8 @@ public class BRActive {
     /*  LISTENERS  */
     /*=============*/
 
-    private ActionResult onWorldInteraction(@Nullable ServerPlayerEntity player, BlockPos pos) {
-        return canInteractWithWorldAt(player, pos) ? ActionResult.SUCCESS : ActionResult.FAIL;
+    private EventResult onWorldInteraction(@Nullable ServerPlayerEntity player, BlockPos pos) {
+        return canInteractWithWorldAt(player, pos) ? EventResult.ALLOW : EventResult.DENY;
     }
 
     private boolean canInteractWithWorldAt(@Nullable PlayerEntity player, BlockPos pos) {
@@ -561,7 +521,7 @@ public class BRActive {
         return true;
     }
 
-    private ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity, Hand hand, BlockHitResult blockHitResult) {
+    private ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity, BlockHitResult blockHitResult) {
         var blockEntity = world.getBlockEntity(pos);
         var block = state.getBlock();
 
@@ -578,30 +538,30 @@ public class BRActive {
         return ActionResult.PASS;
     }
 
-    private ActionResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
-        if (canInteractWithWorldAt(player, pos)) {
-			/*
-			  This currently doesn't work very well, so I'm disabling it for now
-			  If you hold the click it won't break the second block if you're still holding the click
-			if(data.breakingCooldown > 0) {
-				return ActionResult.FAIL;
-			}
-			 */
-            var state = this.world.getBlockState(pos);
-            var center = pos.toCenterPos();
-
-            this.giveBlock(player, pos);
-            this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-            this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
-            this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
-
-            var data = this.playerDataMap.get(player.getUuid());
-            int score = this.calcPlayerScore(data);
-            data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
-            data.setNameHologramColor(TextUtil.lerpScoreColor((float) score / this.maxScore));
-            return ActionResult.SUCCESS;
+    private EventResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
+        if (!canInteractWithWorldAt(player, pos)) {
+            return EventResult.DENY;
         }
-        return ActionResult.FAIL;
+        /*
+          This currently doesn't work very well, so I'm disabling it for now
+          If you hold the click it won't break the second block if you're still holding the click
+        if(data.breakingCooldown > 0) {
+            return EventResult.DENY;
+        }
+         */
+        var state = this.world.getBlockState(pos);
+        var center = pos.toCenterPos();
+
+        this.giveBlock(player, pos);
+        this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
+        this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+        this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+
+        var data = this.playerDataMap.get(player.getUuid());
+        int score = this.calcPlayerScore(data);
+        data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
+        data.setNameHologramColor(TextUtil.lerpScoreColor((float) score / this.maxScore));
+        return EventResult.ALLOW;
     }
 
     private ActionResult onBlockBroken(BlockPos pos, boolean drops, @Nullable Entity breakingEntity, int ignored) {
@@ -638,8 +598,6 @@ public class BRActive {
     private void addPlayer(ServerPlayerEntity player) {
         this.sidebar.addPlayer(player);
         this.resetPlayer(player, true);
-
-        this.songManager.addPlayer(player);
     }
 
     private void removePlayer(ServerPlayerEntity player) {
@@ -653,7 +611,6 @@ public class BRActive {
         }
         this.sidebar.removePlayer(player);
         this.refreshSidebar();
-        this.songManager.removePlayer(player);
     }
 
     /*===========*/
@@ -706,7 +663,7 @@ public class BRActive {
                     }
                 }
             }
-            player.teleport(pos.getX(), pos.getY(), pos.getZ());
+            player.teleport(pos.getX(), pos.getY(), pos.getZ(), false);
         }
 
         player.setHealth(20.0f);
@@ -734,7 +691,7 @@ public class BRActive {
             data.score = this.maxScore;
             //TODO: store and send time
             player.sendMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
-            player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+            player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             resetPlayer(player, false);
             TextUtil.clearTitle(player);
         }
@@ -782,7 +739,7 @@ public class BRActive {
             var targetState = this.world.getBlockState(targetPos);
             var targetEntity = this.world.getBlockEntity(targetPos);
             var sourceNbt = this.cachedBuild.nbt(pos);
-            var targetNbt = targetEntity != null ? targetEntity.createNbt() : null;
+            var targetNbt = targetEntity != null ? targetEntity.createNbt(this.world.getRegistryManager()) : null;
             if (BuildUtil.areEqual(sourceState, sourceNbt, targetState, targetNbt)) {
                 score++;
             }
@@ -969,7 +926,7 @@ public class BRActive {
 
             if (data.score == this.maxScore) {
                 TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
-                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             } else {
                 float scorePercentage = data.score / (float) this.maxScore;
                 String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
@@ -978,7 +935,7 @@ public class BRActive {
 
                 player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
                 TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
-                player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.MASTER, 1.0f, 1.0f);
+                player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
             }
         }
 
@@ -1005,7 +962,8 @@ public class BRActive {
             perfectRoundsInARow = 0;
 
             // play an explosion sound and particles
-            this.world.playSound(null, BlockPos.ofFloored(loserData.plot.buildBounds().center()), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f * this.size, 1.0f);
+            var center = loserData.plot.buildBounds().center();
+            this.world.playSound(null, center.getX(), center.getY(), center.getZ(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f * this.size, 1.0f);
             this.world.spawnParticles(ParticleTypes.EXPLOSION,
                     loserData.plot.buildBounds().center().getX(), loserData.plot.buildBounds().center().getY(), loserData.plot.buildBounds().center().getZ(), 10,
                     this.size / 1.5f, this.size / 1.5f, this.size / 1.5f, 0.0);

@@ -18,18 +18,17 @@ import xyz.nucleoid.stimuli.Stimuli;
 @Mixin(AbstractBlock.AbstractBlockState.class)
 public class AbstractBlockStateMixin {
 	@Inject(method = "onUse", at = @At("HEAD"), cancellable = true)
-	private void onUse(World world, PlayerEntity player, Hand hand, BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
+	private void onUse(World world, PlayerEntity player, BlockHitResult hit, CallbackInfoReturnable<ActionResult> cir) {
 		if(!world.isClient()) {
 			var events = Stimuli.select();
 			try(var invokers = events.forEntityAt(player, hit.getBlockPos())) {
 				var state = world.getBlockState(hit.getBlockPos());
-				var result = invokers.get(UseEvents.BLOCK).onBlockUsed(state, world, hit.getBlockPos(), player, hand, hit);
+				var result = invokers.get(UseEvents.BLOCK).onBlockUsed(state, world, hit.getBlockPos(), player, hit);
 
 				if (result == ActionResult.FAIL) {
 					// notify the client that this action did not go through
-					int slot = hand == Hand.MAIN_HAND ? player.getInventory().selectedSlot : 40;
-					var stack = player.getStackInHand(hand);
-					((ServerPlayerEntity)player).networkHandler.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(ScreenHandlerSlotUpdateS2CPacket.UPDATE_PLAYER_INVENTORY_SYNC_ID, 0, slot, stack));
+					var stack = player.getMainHandStack();
+					((ServerPlayerEntity)player).networkHandler.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(0, 0, player.getInventory().selectedSlot, stack));
 
 					cir.setReturnValue(ActionResult.FAIL);
 				}

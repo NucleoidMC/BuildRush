@@ -13,7 +13,7 @@ Build Rush can be installed on a client or a server. As this is a multiplayer mi
 
 ⚠ Build Rush **needs** the following mods to be installed:
 - Plasmid: [GitHub](https://github.com/NucleoidMC/plasmid) / [Modrinth](https://modrinth.com/mod/plasmid)
-- Fabric API: [GitHub](https://github.com/FabricMC/fabric) / [CurseForge](https://www.curseforge.com/minecraft/mc-mods/fabric-api) / [Modrinth](https://modrinth.com/mod/fabric-api)
+- Fabric API: [GitHub](https://github.com/FabricMC/fabric) / [Modrinth](https://modrinth.com/mod/fabric-api) / [CurseForge](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
 
 ## Usage
 

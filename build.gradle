@@ -1,5 +1,5 @@
 plugins {
-    id "fabric-loom" version "1.5.+"
+    id "fabric-loom" version "1.8.+"
     id 'maven-publish'
 }
 
@@ -27,7 +27,6 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
     modImplementation "xyz.nucleoid:plasmid:${project.plasmid_version}"
-    modImplementation include("maven.modrinth:nota:${project.nota_version}")
 }
 
 processResources {
@@ -40,7 +39,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
     it.options.encoding = "UTF-8"
-    it.options.release = 17
+    it.options.release = 21
 }
 
 java {

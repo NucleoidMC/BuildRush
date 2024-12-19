@@ -19,13 +19,15 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import xyz.nucleoid.plasmid.game.GameOpenContext;
-import xyz.nucleoid.plasmid.game.GameOpenException;
-import xyz.nucleoid.plasmid.game.GameOpenProcedure;
-import xyz.nucleoid.plasmid.game.GameResult;
-import xyz.nucleoid.plasmid.game.common.GameWaitingLobby;
-import xyz.nucleoid.plasmid.game.event.GameActivityEvents;
-import xyz.nucleoid.plasmid.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.GameOpenContext;
+import xyz.nucleoid.plasmid.api.game.GameOpenException;
+import xyz.nucleoid.plasmid.api.game.GameOpenProcedure;
+import xyz.nucleoid.plasmid.api.game.GameResult;
+import xyz.nucleoid.plasmid.api.game.common.GameWaitingLobby;
+import xyz.nucleoid.plasmid.api.game.event.GameActivityEvents;
+import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
+import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
+import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
@@ -55,14 +57,15 @@ public class BRWaiting {
                 if (source.isOf(DamageTypes.OUT_OF_WORLD)) {
                     resetPlayer(player, world, spawnPos);
                 }
-                return ActionResult.FAIL;
+                return EventResult.DENY;
             });
             activity.listen(PlayerDeathEvent.EVENT, (player, source) -> {
                 resetPlayer(player, world, spawnPos);
-                return ActionResult.FAIL;
+                return EventResult.DENY;
             });
 
-            activity.listen(GamePlayerEvents.OFFER, offer -> offer.accept(world, spawnPos).and(() -> resetPlayer(offer.player(), world, spawnPos)));
+            activity.listen(GamePlayerEvents.OFFER, JoinOffer::accept);
+            activity.listen(GamePlayerEvents.ACCEPT, offer -> offer.teleport(world, spawnPos).thenRunForEach((player) -> resetPlayer(player, world, spawnPos)));
 
             activity.listen(GameActivityEvents.REQUEST_START, () -> {
                 BRActive.create(config, activity.getGameSpace(), world, map, builds);
@@ -72,7 +75,7 @@ public class BRWaiting {
     }
 
     public static void resetPlayer(ServerPlayerEntity player, World world, Vec3d pos) {
-        player.teleport(pos.getX(), pos.getY(), pos.getZ());
+        player.teleport(pos.getX(), pos.getY(), pos.getZ(), false);
 
         player.setHealth(20.0f);
         player.changeGameMode(GameMode.ADVENTURE);
@@ -86,7 +89,7 @@ public class BRWaiting {
 
         List<Build> builds = new ArrayList<>();
         var buildEntries = config.builds()
-                .orElse(registryManager.get(BRRegistries.BUILD).getEntryList(BRTags.GENERIC)
+                .orElse(registryManager.getOrThrow(BRRegistries.BUILD).getOptional(BRTags.GENERIC)
                         .orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.tag.generic.not_found"))));
 
         for (RegistryEntry<Build> buildEntry : buildEntries) {

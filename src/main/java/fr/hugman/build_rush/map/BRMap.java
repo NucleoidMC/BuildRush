@@ -7,9 +7,9 @@ import net.minecraft.world.GameRules;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
-import xyz.nucleoid.plasmid.game.GameOpenContext;
-import xyz.nucleoid.plasmid.game.GameOpenException;
-import xyz.nucleoid.plasmid.game.world.generator.TemplateChunkGenerator;
+import xyz.nucleoid.plasmid.api.game.GameOpenContext;
+import xyz.nucleoid.plasmid.api.game.GameOpenException;
+import xyz.nucleoid.plasmid.api.game.world.generator.TemplateChunkGenerator;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,9 +43,11 @@ public record BRMap(Plot centerPlot, List<Plot> plots, RuntimeWorldConfig worldC
         validateBounds(centerPlotBounds, size);
 
         var plotBoundsList = metadata.getRegionBounds("plot").toList();
-        if (plotBoundsList.size() < config.playerConfig().maxPlayers()) {
-            throw new GameOpenException(Text.translatable("error.build_rush.mapConfig.plots.not_enough", plotBoundsList.size(), config.playerConfig().maxPlayers()));
-        }
+        config.playerConfig().playerConfig().maxPlayers().ifPresent(value -> {
+            if (plotBoundsList.size() > value) {
+                throw new GameOpenException(Text.translatable("error.build_rush.mapConfig.plots.too_much", plotBoundsList.size(), value));
+            }
+        });
 
         List<Plot> plots = new ArrayList<>();
         for(var plotBounds : plotBoundsList) {

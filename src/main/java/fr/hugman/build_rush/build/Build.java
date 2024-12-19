@@ -10,7 +10,7 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.entry.RegistryEntryList;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import xyz.nucleoid.plasmid.util.PlasmidCodecs;
+import xyz.nucleoid.plasmid.api.util.PlasmidCodecs;
 
 import java.util.List;
 import java.util.Optional;

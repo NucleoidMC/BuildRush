@@ -1,7 +1,7 @@
 package fr.hugman.build_rush.statistics;
 
 import fr.hugman.build_rush.BuildRush;
-import xyz.nucleoid.plasmid.game.stats.StatisticKey;
+import xyz.nucleoid.plasmid.api.game.stats.StatisticKey;
 
 public class BRStatistics {
     public static final StatisticKey<Integer> SURVIVED_ROUNDS = StatisticKey.intKey(BuildRush.id("survived_rounds"));

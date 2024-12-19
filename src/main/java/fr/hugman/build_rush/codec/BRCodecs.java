@@ -13,6 +13,6 @@ public class BRCodecs {
 	public static final Codec<BlockPos> BLOCK_POS = simpleEither(BlockPos.CODEC, StringParser.BLOCK_POS_STRING);
 
 	public static <S> Codec<S> simpleEither(Codec<S> baseCodec, Codec<S> simpleCodec) {
-		return Codecs.xor(baseCodec, simpleCodec).xmap(e -> e.map(Function.identity(), Function.identity()), Either::right);
+		return Codec.xor(baseCodec, simpleCodec).xmap(e -> e.map(Function.identity(), Function.identity()), Either::right);
 	}
 }
