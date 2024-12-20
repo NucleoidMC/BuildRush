@@ -2,6 +2,7 @@
   "values": [
     "build_rush:wither",
     "build_rush:snow_golem",
-    "build_rush:iron_golem"
+    "build_rush:iron_golem",
+    "build_rush:how"
   ]
 }
