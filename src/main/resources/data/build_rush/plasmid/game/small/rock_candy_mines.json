@@ -1,0 +1,26 @@
+{
+  "type": "build_rush:standard",
+  "name": {
+    "translate": "game.build_rush.small.with_map",
+    "with": [
+      {
+        "translate": "map.build_rush.rock_candy_mines"
+      }
+    ]
+  },
+  "icon": "minecraft:dripstone_block",
+  "players": {
+    "min": 1,
+    "threshold": 8,
+    "max": 16
+  },
+  "map": {
+    "template": "build_rush:rock_candy_mines",
+    "author": {
+      "name": "Hugman",
+      "uuid": "c789cee4-c9fb-4c1b-8a58-fa64dff0034f"
+    },
+    "nametag_offset": 5,
+    "nametag_size": 7
+  }
+}
