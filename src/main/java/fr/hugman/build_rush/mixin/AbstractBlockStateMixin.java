@@ -28,7 +28,7 @@ public class AbstractBlockStateMixin {
 				if (result == ActionResult.FAIL) {
 					// notify the client that this action did not go through
 					var stack = player.getMainHandStack();
-					((ServerPlayerEntity)player).networkHandler.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(0, 0, player.getInventory().selectedSlot, stack));
+					((ServerPlayerEntity)player).networkHandler.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(0, 0, player.getInventory().getSelectedSlot(), stack));
 
 					cir.setReturnValue(ActionResult.FAIL);
 				}

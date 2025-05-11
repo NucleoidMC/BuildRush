@@ -27,7 +27,7 @@ public class ItemStackMixin {
 
 				if (result == ActionResult.FAIL) {
 					// notify the client that this action did not go through
-					int slot = context.getHand() == Hand.MAIN_HAND ? player.getInventory().selectedSlot : 40;
+					int slot = context.getHand() == Hand.MAIN_HAND ? player.getInventory().getSelectedSlot() : 40;
 					var stack = context.getStack();
 					((ServerPlayerEntity)player).networkHandler.sendPacket(new ScreenHandlerSlotUpdateS2CPacket(0, 0, slot, stack));
 

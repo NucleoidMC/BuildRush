@@ -458,7 +458,7 @@ public class BRActive {
         }
 
         if (giveToHand) {
-            var slot = player.getInventory().selectedSlot;
+            var slot = player.getInventory().getSelectedSlot();
             var oldStack = player.getInventory().getStack(slot);
             if (oldStack.isEmpty()) {
                 player.getInventory().setStack(slot, stack.copy());

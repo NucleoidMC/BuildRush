@@ -10,7 +10,6 @@ import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.component.type.UnbreakableComponent;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
@@ -20,6 +19,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.state.property.Property;
+import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
@@ -226,7 +226,7 @@ public class BuildItemCollector {
     }
 
     private static void setUnbreakable(ItemStack stack) {
-        stack.set(DataComponentTypes.UNBREAKABLE, new UnbreakableComponent(false));
+        stack.set(DataComponentTypes.UNBREAKABLE, Unit.INSTANCE);
     }
 
     public static void addBlockEntityNbt(ServerWorld world, ItemStack stack, BlockEntity blockEntity) {
