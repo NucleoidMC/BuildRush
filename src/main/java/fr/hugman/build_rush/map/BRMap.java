@@ -3,7 +3,7 @@ package fr.hugman.build_rush.map;
 import fr.hugman.build_rush.BRConfig;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.world.GameRules;
+import net.minecraft.world.rule.GameRules;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 import xyz.nucleoid.map_templates.BlockBounds;
 import xyz.nucleoid.map_templates.MapTemplateSerializer;
@@ -24,7 +24,7 @@ public record BRMap(Plot centerPlot, List<Plot> plots, RuntimeWorldConfig worldC
         var metadata = template.getMetadata();
 
         var worldConfig = new RuntimeWorldConfig().setGenerator(new TemplateChunkGenerator(server, template))
-                .setGameRule(GameRules.DO_FIRE_TICK, false)
+                .setGameRule(GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER, -1)
                 .setGameRule(GameRules.FIRE_DAMAGE, false)
                 .setGameRule(GameRules.FREEZE_DAMAGE, false)
                 .setGameRule(GameRules.DO_MOB_GRIEFING, false)

@@ -1,8 +1,12 @@
 package fr.hugman.build_rush.misc;
 
+import fr.hugman.build_rush.BuildRush;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.NbtReadView;
+import net.minecraft.storage.NbtWriteView;
+import net.minecraft.util.ErrorReporter;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import xyz.nucleoid.map_templates.BlockBounds;
@@ -55,7 +59,10 @@ public class CachedBlocks {
 			var nbt = entry.getValue();
 			var entity = world.getBlockEntity(targetPos);
 			if (entity != null) {
-				entity.read(nbt, world.getRegistryManager());
+                try (ErrorReporter.Logging errorReporter = new ErrorReporter.Logging(entity.getReporterContext(), BuildRush.LOGGER)) {
+                    var view = NbtReadView.create(errorReporter, world.getRegistryManager(), nbt);
+                    entity.read(view);
+                }
 			}
 		}
 	}

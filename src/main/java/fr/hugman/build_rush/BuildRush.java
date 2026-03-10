@@ -5,13 +5,13 @@ import fr.hugman.build_rush.registry.BRRegistries;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.util.Identifier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import xyz.nucleoid.plasmid.api.game.GameType;
 
 public class BuildRush implements ModInitializer {
 	public static final String ID = "build_rush";
-	public static final Logger LOGGER = LogManager.getLogger(ID);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ID);
 
 	@Override
 	public void onInitialize() {

@@ -19,6 +19,9 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.state.property.Property;
+import net.minecraft.storage.NbtReadView;
+import net.minecraft.storage.NbtWriteView;
+import net.minecraft.util.ErrorReporter;
 import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
@@ -231,7 +234,10 @@ public class BuildItemCollector {
 
     public static void addBlockEntityNbt(ServerWorld world, ItemStack stack, BlockEntity blockEntity) {
         NbtCompound nbt = blockEntity.createNbtWithIdentifyingData(world.getRegistryManager());
-        BlockItem.setBlockEntityData(stack, blockEntity.getType(), nbt);
-        stack.applyComponentsFrom(blockEntity.createComponentMap());
+        try (ErrorReporter.Logging errorReporter = new ErrorReporter.Logging(blockEntity.getReporterContext(), BuildRush.LOGGER)) {
+            var view = NbtWriteView.create(errorReporter, world.getRegistryManager());
+            BlockItem.setBlockEntityData(stack, blockEntity.getType(), view);
+            stack.applyComponentsFrom(blockEntity.createComponentMap());
+        }
     }
 }

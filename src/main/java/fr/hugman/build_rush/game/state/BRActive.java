@@ -271,7 +271,7 @@ public class BRActive {
                     if (otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
                         resetPlayer(player, true);
                         player.sendMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
-                        player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.PLAYERS, 1, 1);
+                        player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), 1, 1);
                         break;
                     }
                 }
@@ -303,18 +303,18 @@ public class BRActive {
                                 }
                                 if (stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
                                     TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
-                                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1.3f);
+                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1.3f);
                                 }
                                 if (stateSeconds <= 5) {
                                     TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
-                                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1.6f);
+                                    player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1.6f);
                                 }
                             } else {
                                 data.bar.setColor(BossBar.Color.GREEN);
                             }
                             if (stateSeconds == 0 && (stateMinutes == 1 || stateMinutes == 2)) {
                                 TextUtil.sendSubtitle(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
-                                player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1);
+                                player.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), 1, 1);
                             }
                         }
                         data.bar.setPercent(statePercent);
@@ -394,7 +394,7 @@ public class BRActive {
             player.sendMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated.self", player.getName().getString()));
             TextUtil.clearSubtitle(player);
             TextUtil.sendTitle(player, TextUtil.translatable(TextUtil.DANGER, "title.build_rush.eliminated"), 0, 5 * 20, 20);
-            player.playSoundToPlayer(SoundEvents.ENTITY_BLAZE_DEATH, SoundCategory.PLAYERS, 1, 2f);
+            player.playSound(SoundEvents.ENTITY_BLAZE_DEATH, 1, 2f);
         }
         this.refreshSidebar();
 
@@ -691,7 +691,7 @@ public class BRActive {
             data.score = this.maxScore;
             //TODO: store and send time
             player.sendMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
-            player.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+            player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             resetPlayer(player, false);
             TextUtil.clearTitle(player);
         }
@@ -926,7 +926,7 @@ public class BRActive {
 
             if (data.score == this.maxScore) {
                 TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
-                player.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             } else {
                 float scorePercentage = data.score / (float) this.maxScore;
                 String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
@@ -935,7 +935,7 @@ public class BRActive {
 
                 player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
                 TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
-                player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
             }
         }
 
