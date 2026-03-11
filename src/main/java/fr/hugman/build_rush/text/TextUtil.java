@@ -23,6 +23,10 @@ public class TextUtil {
 	public static final int LEGENDARY = 0xface3e;
 	public static final int LEGENDARY_S = 0xd9a107;
 
+    public static final int GOLD = 0xc98910;
+    public static final int SILVER = 0x965a38;
+    public static final int BRONZE = 0xa8a8a8;
+
 	public static final String DASH = "»";
 	public static final String SKULL = "☠";
 	public static final String PICKAXE = "⛏";

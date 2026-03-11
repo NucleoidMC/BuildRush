@@ -38,6 +38,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Pair;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -62,10 +63,7 @@ import xyz.nucleoid.stimuli.event.block.FluidPlaceEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDamageEvent;
 import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class BRActive {
     private final ServerWorld world;
@@ -918,25 +916,41 @@ public class BRActive {
             this.perfectRoundsInARow++;
         }
 
+        List<Pair<ServerPlayerEntity, Integer>> scores = new ArrayList<>();
+
         for (var player : this.space.getPlayers()) {
             var data = this.playerDataMap.get(player.getUuid());
             if (data == null || data.eliminated) {
                 continue;
             }
 
-            if (data.score == this.maxScore) {
-                TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
-                player.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
-            } else {
-                float scorePercentage = data.score / (float) this.maxScore;
-                String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
-                var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent)
-                        .setStyle(Style.EMPTY.withColor(TextUtil.lerpScoreColor(scorePercentage)).withBold(true));
+            scores.add(new Pair<>(player, data.score));
+        }
+        scores.sort(Comparator.comparing(Pair::getRight));
 
-                player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
-                TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
-                player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+        this.world.getServer().getPlayerManager().broadcast(Text.translatable("generic.build_rush.round_stats.title").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), false);
+        int rank = 0;
+        int previousScore = Integer.MAX_VALUE;
+        for (int i = scores.size() - 1; i >= 0; i--) {
+            Pair<ServerPlayerEntity, Integer> pair = scores.get(i);
+            if (pair.getRight() < previousScore) {
+                rank++;
             }
+            float scorePercentage = pair.getRight() / (float) this.maxScore;
+            String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
+
+            var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent)
+                .setStyle(Style.EMPTY.withColor(TextUtil.lerpScoreColor(scorePercentage)).withBold(true));
+
+            int color = switch (rank) {
+                case 1 -> TextUtil.GOLD;
+                case 2 -> TextUtil.SILVER;
+                case 3 -> TextUtil.BRONZE;
+                default -> TextUtil.NEUTRAL;
+            };
+
+            this.world.getServer().getPlayerManager().broadcast(Text.translatable("generic.build_rush.round_stats.entry", rank, pair.getLeft().getDisplayName(), scoreText).setStyle(Style.EMPTY.withColor(color)), false);
+            previousScore = pair.getRight();
         }
 
         if (this.loserUuid == null) {

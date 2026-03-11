@@ -9,8 +9,10 @@
   "game.build_rush.flags.signal": "Build Rush: Signal Flags",
 
   "generic.build_rush.score": "%d%%",
+  "generic.build_rush.round_stats.title": "Round stats:",
+  "generic.build_rush.round_stats.entry": "%d. %s - %s",
 
-  "text.build_rush.eliminated": "%s has been eliminated! They got a %s percent correct build.",
+	"text.build_rush.eliminated": "%s has been eliminated! They got a %s percent correct build.",
   "text.build_rush.eliminated.self": "You have been eliminated!",
   "text.build_rush.score": "You got a %s correct build!",
   "text.build_rush.finished": "You got the entire build correctly!",
