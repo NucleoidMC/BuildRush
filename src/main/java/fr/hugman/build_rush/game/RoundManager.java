@@ -1,7 +1,7 @@
 package fr.hugman.build_rush.game;
 
 import fr.hugman.build_rush.game.state.BRActive;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 public class RoundManager {
     public static final int MEMORIZE_START = 0;
@@ -56,8 +56,8 @@ public class RoundManager {
 
     public void setTimes(int complexity, int previousPerfectRounds) {
         double nerf = Math.pow(number, 2) - 0.5D + previousPerfectRounds * 3;
-        this.lengths[1] = Math.max(3 * 20, MathHelper.ceil(complexity * 0.4D * 20 - nerf));
-        this.lengths[2] = Math.max(5 * 20, MathHelper.ceil(complexity * 0.8D * 20 - nerf));
+        this.lengths[1] = Math.max(3 * 20, Mth.ceil(complexity * 0.4D * 20 - nerf));
+        this.lengths[2] = Math.max(5 * 20, Mth.ceil(complexity * 0.8D * 20 - nerf));
     }
 
     public void tick() {

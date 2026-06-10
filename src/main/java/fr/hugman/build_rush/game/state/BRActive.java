@@ -20,31 +20,37 @@ import fr.hugman.build_rush.misc.CachedBlocks;
 import fr.hugman.build_rush.registry.tag.BRTags;
 import fr.hugman.build_rush.statistics.BRStatistics;
 import fr.hugman.build_rush.text.TextUtil;
-import net.minecraft.block.*;
-import net.minecraft.block.entity.LockableContainerBlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Display;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.AnvilBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.ComposterBlock;
+import net.minecraft.world.level.block.EnchantingTableBlock;
+import net.minecraft.world.level.block.GrindstoneBlock;
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import xyz.nucleoid.plasmid.api.game.GameCloseReason;
@@ -55,6 +61,7 @@ import xyz.nucleoid.plasmid.api.game.event.GamePlayerEvents;
 import xyz.nucleoid.plasmid.api.game.player.JoinOffer;
 import xyz.nucleoid.plasmid.api.game.rule.GameRuleType;
 import xyz.nucleoid.plasmid.api.game.stats.GameStatisticBundle;
+import xyz.nucleoid.plasmid.api.util.PlayerUtil;
 import xyz.nucleoid.stimuli.event.EventResult;
 import xyz.nucleoid.stimuli.event.block.BlockPlaceEvent;
 import xyz.nucleoid.stimuli.event.block.BlockPunchEvent;
@@ -68,7 +75,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class BRActive {
-    private final ServerWorld world;
+    private final ServerLevel level;
     private final GameSpace space;
     private final BRConfig config;
 
@@ -99,8 +106,8 @@ public class BRActive {
 
     public final GameStatisticBundle statistics;
 
-    public BRActive(ServerWorld world, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds) {
-        this.world = world;
+    public BRActive(ServerLevel level, GameSpace space, BRConfig config, int size, Plot centerPlot, List<Build> builds) {
+        this.level = level;
         this.config = config;
         this.space = space;
 
@@ -123,12 +130,12 @@ public class BRActive {
 
         this.sidebar = new Sidebar(Sidebar.Priority.MEDIUM);
 
-        this.judge = Judge.of(roundManager, world, this.centerPlot.groundBounds().center().add(0, size + 3, 0));
+        this.judge = Judge.of(roundManager, level, this.centerPlot.groundBounds().center().add(0, size + 3, 0));
 
         this.statistics = space.getStatistics().bundle(BuildRush.ID);
     }
 
-    public static BRActive create(BRConfig config, GameSpace space, ServerWorld world, BRMap map, List<Build> builds) {
+    public static BRActive create(BRConfig config, GameSpace space, ServerLevel world, BRMap map, List<Build> builds) {
         var centerPlot = map.centerPlot();
         var size = centerPlot.buildBounds().size().getX() + 1;
 
@@ -160,7 +167,7 @@ public class BRActive {
             activity.listen(GamePlayerEvents.REMOVE, active::removePlayer);
 
             activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
-                if (source.isOf(DamageTypes.OUT_OF_WORLD)) {
+                if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
                     active.resetPlayer(player, true);
                 }
                 return EventResult.DENY;
@@ -176,7 +183,7 @@ public class BRActive {
             activity.listen(WorldBlockBreakEvent.EVENT, active::onBlockBroken);
             activity.listen(UseEvents.BLOCK, active::onBlockUsed);
             activity.listen(UseEvents.ITEM_ON_BLOCK, (stack, context) ->
-                    active.onWorldInteraction((ServerPlayerEntity) context.getPlayer(), context.getBlockPos().add(context.getSide().getVector())).asActionResult()
+                    active.onWorldInteraction((ServerPlayer) context.getPlayer(), context.getClickedPos().offset(context.getClickedFace().getUnitVec3i())).asActionResult()
             );
         });
 
@@ -192,33 +199,33 @@ public class BRActive {
         var playerCount = BuildRush.debug() ? players.size() + 2 : players.size();
         int i = 0;
         for (var player : players) {
-            var data = new PlayerData();
+            var data = new PlayerData(Mth.createInsecureUUID(this.level.getRandom()));
 
-            var plot = plots.get(this.world.random.nextInt(plots.size()));
+            var plot = plots.get(this.level.getRandom().nextInt(plots.size()));
             data.plot = plot;
             plots.remove(plot);
 
             data.join(player);
-            Vec3d pos = plot.buildBounds().centerTop().add(0, this.config.mapConfig().nametagOffset(), 0);
+            Vec3 pos = plot.buildBounds().centerTop().add(0, this.config.mapConfig().nametagOffset(), 0);
 
             data.playerNameHolder = new ElementHolder();
-            ChunkAttachment.of(data.playerNameHolder, world, pos);
-            data.playerNameElement = new TextDisplayElement(player == null ? Text.of("???") : player.getDisplayName());
-            data.playerNameElement.setBillboardMode(DisplayEntity.BillboardMode.VERTICAL);
+            ChunkAttachment.of(data.playerNameHolder, level, pos);
+            data.playerNameElement = new TextDisplayElement(player == null ? Component.nullToEmpty("???") : player.getDisplayName());
+            data.playerNameElement.setBillboardMode(Display.BillboardConstraints.VERTICAL);
             data.playerNameElement.setScale(new Vector3f(5, 5, 5));
 
             data.playerNameHolder.addElement(data.playerNameElement);
             data.playerNameTick += (int) (((float) i++ / playerCount) * PlayerData.PLAYER_NAME_TICKS);
 
-            this.playerDataMap.put(player.getUuid(), data);
+            this.playerDataMap.put(player.getUUID(), data);
         }
         if (BuildRush.debug()) {
-            var data1 = new PlayerData();
-            var data2 = new PlayerData();
+            var data1 = new PlayerData(Mth.createInsecureUUID(this.level.getRandom()));
+            var data2 = new PlayerData(Mth.createInsecureUUID(this.level.getRandom()));
 
-            var plot1 = plots.get(this.world.random.nextInt(plots.size()));
+            var plot1 = plots.get(this.level.getRandom().nextInt(plots.size()));
             plots.remove(plot1);
-            var plot2 = plots.get(this.world.random.nextInt(plots.size()));
+            var plot2 = plots.get(this.level.getRandom().nextInt(plots.size()));
             plots.remove(plot2);
 
             data1.playerNameTick += (int) (((float) i++ / playerCount) * PlayerData.PLAYER_NAME_TICKS);
@@ -264,14 +271,14 @@ public class BRActive {
         var stateSeconds = stateTicksLeft / 20 % 60;
 
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (!player.isSpectator() && this.canInteractWithWorld) {
                 // if the player is in another's safe zone, teleport them back to their own plot
                 for (var otherData : this.playerDataMap.values()) {
-                    if (otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.getBlockPos())) {
+                    if (otherData != data && otherData.plot != null && otherData.plot.safeZone().contains(player.blockPosition())) {
                         resetPlayer(player, true);
-                        player.sendMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
-                        player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_DIDGERIDOO.value(), SoundCategory.PLAYERS, 1, 1);
+                        player.sendSystemMessage(TextUtil.translatable(TextUtil.WARNING, TextUtil.DANGER, "text.build_rush.do_not_disturb"));
+                        PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_DIDGERIDOO.value(), SoundSource.PLAYERS, 1, 1);
                         break;
                     }
                 }
@@ -286,38 +293,38 @@ public class BRActive {
                         data.bar.setVisible(true);
                     }
                     if (data.score == this.maxScore) {
-                        data.bar.setName(Text.translatable("bar.build_rush.perfect_build"));
-                        data.bar.setColor(BossBar.Color.GREEN);
-                        data.bar.setPercent(1);
+                        data.bar.setName(Component.translatable("bar.build_rush.perfect_build"));
+                        data.bar.setColor(BossEvent.BossBarColor.GREEN);
+                        data.bar.setProgress(1);
                     } else {
-                        data.bar.setName(Text.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
+                        data.bar.setName(Component.translatable("bar.build_rush.time_left", String.format("%d", stateMinutes), String.format("%02d", stateSeconds)));
 
                         if (stateTicksLeft % 20 == 0) {
                             if (stateMinutes == 0) {
                                 if (stateSeconds >= 30) {
-                                    data.bar.setColor(BossBar.Color.GREEN);
+                                    data.bar.setColor(BossEvent.BossBarColor.GREEN);
                                 } else if (stateSeconds >= 15) {
-                                    data.bar.setColor(BossBar.Color.YELLOW);
+                                    data.bar.setColor(BossEvent.BossBarColor.YELLOW);
                                 } else if (stateSeconds <= 10) {
-                                    data.bar.setColor(BossBar.Color.RED);
+                                    data.bar.setColor(BossEvent.BossBarColor.RED);
                                 }
                                 if (stateSeconds == 30 || stateSeconds == 15 || stateSeconds == 10) {
-                                    TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.YELLOW)), 0, 30, 10);
-                                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1.3f);
+                                    TextUtil.sendSubtitle(player, Component.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW)), 0, 30, 10);
+                                    PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 1, 1.3f);
                                 }
                                 if (stateSeconds <= 5) {
-                                    TextUtil.sendSubtitle(player, Text.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(Formatting.RED)), 0, 20, 0);
-                                    player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1.6f);
+                                    TextUtil.sendSubtitle(player, Component.literal(String.valueOf(stateSeconds)).setStyle(Style.EMPTY.withColor(ChatFormatting.RED)), 0, 20, 0);
+                                    PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 1, 1.6f);
                                 }
                             } else {
-                                data.bar.setColor(BossBar.Color.GREEN);
+                                data.bar.setColor(BossEvent.BossBarColor.GREEN);
                             }
                             if (stateSeconds == 0 && (stateMinutes == 1 || stateMinutes == 2)) {
-                                TextUtil.sendSubtitle(player, Text.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), 0, 40, 20);
-                                player.playSoundToPlayer(SoundEvents.BLOCK_NOTE_BLOCK_BELL.value(), SoundCategory.PLAYERS, 1, 1);
+                                TextUtil.sendSubtitle(player, Component.literal(String.valueOf(60)).setStyle(Style.EMPTY.withColor(ChatFormatting.GREEN)), 0, 40, 20);
+                                PlayerUtil.playSoundToPlayer(player, SoundEvents.NOTE_BLOCK_BELL.value(), SoundSource.PLAYERS, 1, 1);
                             }
                         }
-                        data.bar.setPercent(statePercent);
+                        data.bar.setProgress(statePercent);
                     }
                 }
             }
@@ -332,11 +339,11 @@ public class BRActive {
         this.closeTicks = 20 * 10;
         this.closeTick = this.tick + this.closeTicks;
         for (var player : this.space.getPlayers()) {
-            player.getInventory().clear();
+            player.getInventory().clearContent();
             this.resetPlayer(player, false);
 
-            player.getAbilities().allowFlying = true;
-            player.sendAbilitiesUpdate();
+            player.getAbilities().mayfly = true;
+            player.onUpdateAbilities();
         }
     }
 
@@ -347,7 +354,7 @@ public class BRActive {
     private void onClose(GameCloseReason gameCloseReason) {
         this.sidebar.hide();
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (data != null) {
                 data.leave(player);
             }
@@ -360,11 +367,11 @@ public class BRActive {
     }
 
     public void eliminate(PlayerData data) {
-        ServerPlayerEntity player = null;
+        ServerPlayer player = null;
         for (var uuid : this.playerDataMap.keySet()) {
             if (this.playerDataMap.get(uuid) == data) {
                 for (var p : this.space.getPlayers()) {
-                    if (p.getUuid().equals(uuid)) {
+                    if (p.getUUID().equals(uuid)) {
                         player = p;
                         break;
                     }
@@ -389,12 +396,12 @@ public class BRActive {
             String scoreAsPercent = String.format("%.2f", score * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
             for (var p : this.space.getPlayers()) {
                 if (p == player) continue;
-                p.sendMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated", player.getName().getString(), scoreAsPercent));
+                p.sendSystemMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated", player.getName().getString(), scoreAsPercent));
             }
-            player.sendMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated.self", player.getName().getString()));
+            player.sendSystemMessage(TextUtil.translatable(TextUtil.SKULL, TextUtil.DANGER, "text.build_rush.eliminated.self", player.getName().getString()));
             TextUtil.clearSubtitle(player);
             TextUtil.sendTitle(player, TextUtil.translatable(TextUtil.DANGER, "title.build_rush.eliminated"), 0, 5 * 20, 20);
-            player.playSoundToPlayer(SoundEvents.ENTITY_BLAZE_DEATH, SoundCategory.PLAYERS, 1, 2f);
+            PlayerUtil.playSoundToPlayer(player, SoundEvents.BLAZE_DEATH, SoundSource.PLAYERS, 1, 2f);
         }
         this.refreshSidebar();
 
@@ -410,9 +417,9 @@ public class BRActive {
                     }
                     for (var p : this.space.getPlayers()) {
                         if (p == winner) {
-                            p.sendMessage(TextUtil.translatable(TextUtil.STAR, TextUtil.LEGENDARY, "text.build_rush.win.self", this.roundManager.getNumber()));
+                            p.sendSystemMessage(TextUtil.translatable(TextUtil.STAR, TextUtil.LEGENDARY, "text.build_rush.win.self", this.roundManager.getNumber()));
                         } else {
-                            p.sendMessage(TextUtil.translatable(TextUtil.STAR, TextUtil.EPIC, "text.build_rush.win", winner.getName().getString(), this.roundManager.getNumber()));
+                            p.sendSystemMessage(TextUtil.translatable(TextUtil.STAR, TextUtil.EPIC, "text.build_rush.win", winner.getName().getString(), this.roundManager.getNumber()));
                         }
                     }
                     shouldClose = true;
@@ -426,7 +433,7 @@ public class BRActive {
 
     public void giveInventory() {
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (data == null || data.eliminated) {
                 continue;
             }
@@ -436,9 +443,9 @@ public class BRActive {
         }
     }
 
-    public void giveBlock(PlayerEntity player, BlockPos pos) {
+    public void giveBlock(Player player, BlockPos pos) {
         var collector = new BuildItemCollector();
-        collector.accept(this.world, pos);
+        collector.accept(this.level, pos);
 
         var stacks = collector.getStacks();
         if (stacks.isEmpty()) {
@@ -452,31 +459,31 @@ public class BRActive {
         }
     }
 
-    public void give(PlayerEntity player, ItemStack stack, @Nullable BuildItemCollector collector, boolean giveToHand) {
+    public void give(Player player, ItemStack stack, @Nullable BuildItemCollector collector, boolean giveToHand) {
         if (collector != null && collector.isSingletonStack(stack) && player.getInventory().contains(stack)) {
             return;
         }
 
         if (giveToHand) {
             var slot = player.getInventory().getSelectedSlot();
-            var oldStack = player.getInventory().getStack(slot);
+            var oldStack = player.getInventory().getItem(slot);
             if (oldStack.isEmpty()) {
-                player.getInventory().setStack(slot, stack.copy());
+                player.getInventory().setItem(slot, stack.copy());
             } else {
-                player.giveItemStack(stack.copy());
+                player.addItem(stack.copy());
             }
         } else {
-            player.giveItemStack(stack.copy());
+            player.addItem(stack.copy());
         }
     }
 
     public void clearInventory() {
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (data == null || data.eliminated) {
                 continue;
             }
-            player.getInventory().clear();
+            player.getInventory().clearContent();
         }
     }
 
@@ -484,11 +491,11 @@ public class BRActive {
     /*  LISTENERS  */
     /*=============*/
 
-    private EventResult onWorldInteraction(@Nullable ServerPlayerEntity player, BlockPos pos) {
+    private EventResult onWorldInteraction(@Nullable ServerPlayer player, BlockPos pos) {
         return canInteractWithWorldAt(player, pos) ? EventResult.ALLOW : EventResult.DENY;
     }
 
-    private boolean canInteractWithWorldAt(@Nullable PlayerEntity player, BlockPos pos) {
+    private boolean canInteractWithWorldAt(@Nullable Player player, BlockPos pos) {
         if (!this.canInteractWithWorld) {
             BuildRush.debug("interactWithWorld: cannot build");
             return false;
@@ -501,7 +508,7 @@ public class BRActive {
             BuildRush.debug("interactWithWorld: game is closing");
             return false;
         }
-        var data = this.playerDataMap.get(player.getUuid());
+        var data = this.playerDataMap.get(player.getUUID());
         if (data == null) {
             BuildRush.debug("interactWithWorld: player has no data");
             return false;
@@ -521,24 +528,24 @@ public class BRActive {
         return true;
     }
 
-    private ActionResult onBlockUsed(BlockState state, World world, BlockPos pos, PlayerEntity playerEntity, BlockHitResult blockHitResult) {
+    private InteractionResult onBlockUsed(BlockState state, Level world, BlockPos pos, Player playerEntity, BlockHitResult blockHitResult) {
         var blockEntity = world.getBlockEntity(pos);
         var block = state.getBlock();
 
         if (!this.canInteractWithWorldAt(playerEntity, pos))
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         if (block instanceof ButtonBlock ||
-                blockEntity instanceof LockableContainerBlockEntity ||
+                blockEntity instanceof BaseContainerBlockEntity ||
                 block instanceof ComposterBlock ||
                 block instanceof AnvilBlock ||
                 block instanceof EnchantingTableBlock ||
                 block instanceof GrindstoneBlock) {
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
-    private EventResult punchBlock(ServerPlayerEntity player, Direction direction, BlockPos pos) {
+    private EventResult punchBlock(ServerPlayer player, Direction direction, BlockPos pos) {
         if (!canInteractWithWorldAt(player, pos)) {
             return EventResult.DENY;
         }
@@ -549,22 +556,22 @@ public class BRActive {
             return EventResult.DENY;
         }
          */
-        var state = this.world.getBlockState(pos);
-        var center = pos.toCenterPos();
+        var state = this.level.getBlockState(pos);
+        var center = pos.getCenter();
 
         this.giveBlock(player, pos);
-        this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-        this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
-        this.world.playSound(null, pos, state.getSoundGroup().getBreakSound(), SoundCategory.BLOCKS, 1.0f, 0.8f);
+        this.level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        this.level.sendParticles(ParticleTypes.CRIT, center.x(), center.y(), center.z(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+        this.level.playSound(null, pos, state.getSoundType().getBreakSound(), SoundSource.BLOCKS, 1.0f, 0.8f);
 
-        var data = this.playerDataMap.get(player.getUuid());
+        var data = this.playerDataMap.get(player.getUUID());
         int score = this.calcPlayerScore(data);
         data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
         data.setNameHologramColor(TextUtil.lerpScoreColor((float) score / this.maxScore));
         return EventResult.ALLOW;
     }
 
-    private ActionResult onBlockBroken(BlockPos pos, boolean drops, @Nullable Entity breakingEntity, int ignored) {
+    private InteractionResult onBlockBroken(BlockPos pos, boolean drops, @Nullable Entity breakingEntity, int ignored) {
         PlayerData data = null;
         UUID uuid = null;
         for (var entry : this.playerDataMap.entrySet()) {
@@ -575,39 +582,39 @@ public class BRActive {
             }
         }
         if (data == null || data.eliminated || this.isClosing()) {
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
         if (this.canInteractWithWorld) {
-            var state = this.world.getBlockState(pos);
-            var center = pos.toCenterPos();
+            var state = this.level.getBlockState(pos);
+            var center = pos.getCenter();
             var player = this.space.getPlayers().getEntity(uuid);
 
             if (player != null) {
                 this.giveBlock(player, pos);
             }
-            this.world.setBlockState(pos, Blocks.AIR.getDefaultState());
-            this.world.spawnParticles(ParticleTypes.CRIT, center.getX(), center.getY(), center.getZ(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
-            var soundGroup = state.getSoundGroup();
-            this.world.playSound(null, pos, soundGroup.getBreakSound(), SoundCategory.BLOCKS, 1.0f, soundGroup.getPitch() - 0.2f);
+            this.level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+            this.level.sendParticles(ParticleTypes.CRIT, center.x(), center.y(), center.z(), 5, 0.1D, 0.1D, 0.1D, 0.03D);
+            var soundGroup = state.getSoundType();
+            this.level.playSound(null, pos, soundGroup.getBreakSound(), SoundSource.BLOCKS, 1.0f, soundGroup.getPitch() - 0.2f);
             data.breakingCooldown = PlayerData.BREAKING_COOLDOWN;
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
-        return ActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
-    private void addPlayer(ServerPlayerEntity player) {
+    private void addPlayer(ServerPlayer player) {
         this.sidebar.addPlayer(player);
         this.resetPlayer(player, true);
     }
 
-    private void removePlayer(ServerPlayerEntity player) {
-        var data = this.playerDataMap.get(player.getUuid());
+    private void removePlayer(ServerPlayer player) {
+        var data = this.playerDataMap.get(player.getUUID());
         if (data != null) {
             if (!data.eliminated && !this.isClosing()) {
                 this.eliminate(data);
             }
             data.leave(player);
-            this.playerDataMap.remove(player.getUuid());
+            this.playerDataMap.remove(player.getUUID());
         }
         this.sidebar.removePlayer(player);
         this.refreshSidebar();
@@ -618,20 +625,20 @@ public class BRActive {
     /*===========*/
 
     public void refreshSidebar() {
-        this.sidebar.setTitle(Text.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(Formatting.GOLD).withBold(true)));
+        this.sidebar.setTitle(Component.translatable("game.build_rush").setStyle(Style.EMPTY.withColor(ChatFormatting.GOLD).withBold(true)));
 
         this.sidebar.set(b -> {
-            b.add(Text.translatable("sidebar.build_rush.round", this.roundManager.getNumber()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
-            b.add(Text.empty());
+            b.add(Component.translatable("sidebar.build_rush.round", this.roundManager.getNumber()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(true)));
+            b.add(Component.empty());
 
             if (this.currentBuild != null) {
-                b.add(Text.translatable("sidebar.build_rush.build").setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
-                b.add(this.currentBuild.name().copy().setStyle(Style.EMPTY.withColor(Formatting.WHITE)));
-                this.currentBuild.author().ifPresent(author -> b.add((Text.literal("- ").append(Text.translatable("sidebar.build_rush.author", author.name()))).setStyle(Style.EMPTY.withColor(Formatting.GRAY))));
-                b.add(Text.empty());
+                b.add(Component.translatable("sidebar.build_rush.build").setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(true)));
+                b.add(this.currentBuild.name().copy().setStyle(Style.EMPTY.withColor(ChatFormatting.WHITE)));
+                this.currentBuild.author().ifPresent(author -> b.add((Component.literal("- ").append(Component.translatable("sidebar.build_rush.author", author.name()))).setStyle(Style.EMPTY.withColor(ChatFormatting.GRAY))));
+                b.add(Component.empty());
             }
 
-            b.add(Text.translatable("sidebar.build_rush.players_left", this.getAliveDatas().size()).setStyle(Style.EMPTY.withColor(Formatting.YELLOW).withBold(true)));
+            b.add(Component.translatable("sidebar.build_rush.players_left", this.getAliveDatas().size()).setStyle(Style.EMPTY.withColor(ChatFormatting.YELLOW).withBold(true)));
         });
     }
 
@@ -639,48 +646,48 @@ public class BRActive {
         return this.playerDataMap.values().stream().filter(p -> !p.eliminated).toList();
     }
 
-    public void resetPlayer(ServerPlayerEntity player, boolean teleport) {
-        var data = playerDataMap.get(player.getUuid());
+    public void resetPlayer(ServerPlayer player, boolean teleport) {
+        var data = playerDataMap.get(player.getUUID());
         boolean cannotPlay = data == null || data.eliminated || this.isClosing();
         boolean hasFinished = (this.roundManager.getState() == RoundManager.BUILD && data != null && data.score == this.maxScore) || this.roundManager.getState() >= RoundManager.BUILD_END;
 
         if (teleport) {
-            Vec3d pos;
+            Vec3 pos;
             if (cannotPlay) {
-                pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(centerPlot.groundBounds().center())).toCenterPos();
+                pos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(centerPlot.groundBounds().center())).getCenter();
             } else {
                 data.join(player);
-                pos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(data.plot.groundBounds().center()).add(0, 0, this.size / 2)).toCenterPos();
+                pos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(data.plot.groundBounds().center()).offset(0, 0, this.size / 2)).getCenter();
                 //TODO: add config for this
                 for (int i = 5; i > 0; i--) {
-                    var newPos = world.getTopPosition(Heightmap.Type.WORLD_SURFACE, BlockPos.ofFloored(data.plot.groundBounds().center().add(0, 0, i)));
-                    if (newPos.getY() <= this.world.getBottomY()) {
+                    var newPos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(data.plot.groundBounds().center().add(0, 0, i)));
+                    if (newPos.getY() <= this.level.getMinY()) {
                         continue;
                     }
-                    if (world.getBlockState(newPos.down()).hasSolidTopSurface(world, newPos.down(), player)) {
-                        pos = newPos.toCenterPos();
+                    if (level.getBlockState(newPos.below()).entityCanStandOn(level, newPos.below(), player)) {
+                        pos = newPos.getCenter();
                         break;
                     }
                 }
             }
-            player.teleport(pos.getX(), pos.getY(), pos.getZ(), false);
+            player.randomTeleport(pos.x(), pos.y(), pos.z(), false);
         }
 
         player.setHealth(20.0f);
-        player.changeGameMode(!this.isClosing() && (hasFinished || cannotPlay) ? GameMode.SPECTATOR : GameMode.SURVIVAL);
+        player.setGameMode(!this.isClosing() && (hasFinished || cannotPlay) ? GameType.SPECTATOR : GameType.SURVIVAL);
         if (!player.isSpectator()) {
-            player.getAbilities().allowFlying = true;
+            player.getAbilities().mayfly = true;
             if (this.isClosing()) {
                 player.getAbilities().flying = true;
             }
-            player.sendAbilitiesUpdate();
+            player.onUpdateAbilities();
         }
-        player.getHungerManager().setFoodLevel(20);
-        player.getHungerManager().setSaturationLevel(20.0f);
+        player.getFoodData().setFoodLevel(20);
+        player.getFoodData().setSaturation(20.0f);
     }
 
-    public void onBlockPlaced(ServerPlayerEntity player) {
-        var data = this.playerDataMap.get(player.getUuid());
+    public void onBlockPlaced(ServerPlayer player) {
+        var data = this.playerDataMap.get(player.getUUID());
         if (data == null || data.eliminated) {
             return;
         }
@@ -690,8 +697,8 @@ public class BRActive {
         if (score == this.maxScore) {
             data.score = this.maxScore;
             //TODO: store and send time
-            player.sendMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
-            player.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+            player.sendSystemMessage(TextUtil.translatable(TextUtil.CHECKMARK, TextUtil.SUCCESS, "text.build_rush.finished"), false);
+            PlayerUtil.playSoundToPlayer(player, SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
             resetPlayer(player, false);
             TextUtil.clearTitle(player);
         }
@@ -722,7 +729,7 @@ public class BRActive {
         var collector = new BuildItemCollector();
 
         for (var pos : this.centerPlot.buildBounds()) {
-            collector.accept(this.world, pos);
+            collector.accept(this.level, pos);
         }
 
         this.buildItems.addAll(collector.getStacks());
@@ -732,14 +739,14 @@ public class BRActive {
         int score = 0;
         for (var pos : this.cachedBuild.positions()) {
             var sourceState = this.cachedBuild.state(pos);
-            if (sourceState.isIn(BRTags.IGNORED_IN_COMPARISON)) {
+            if (sourceState.is(BRTags.IGNORED_IN_COMPARISON)) {
                 continue;
             }
-            var targetPos = playerData.plot.buildBounds().min().add(pos);
-            var targetState = this.world.getBlockState(targetPos);
-            var targetEntity = this.world.getBlockEntity(targetPos);
+            var targetPos = playerData.plot.buildBounds().min().offset(pos);
+            var targetState = this.level.getBlockState(targetPos);
+            var targetEntity = this.level.getBlockEntity(targetPos);
             var sourceNbt = this.cachedBuild.nbt(pos);
-            var targetNbt = targetEntity != null ? targetEntity.createNbt(this.world.getRegistryManager()) : null;
+            var targetNbt = targetEntity != null ? targetEntity.saveWithoutMetadata(this.level.registryAccess()) : null;
             if (BuildUtil.areEqual(sourceState, sourceNbt, targetState, targetNbt)) {
                 score++;
             }
@@ -774,13 +781,13 @@ public class BRActive {
     /* ================= */
 
     public void placePlayerBuilds() {
-        var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
+        var structure = this.level.getStructureManager().get(this.currentBuild.structure()).orElseThrow();
 
         for (var playerData : playerDataMap.values()) {
             if (playerData.eliminated) {
                 continue;
             }
-            playerData.plot.placeBuild(this.world, structure);
+            playerData.plot.placeBuild(this.level, structure);
         }
 
         // if the player is inside a block, teleport them
@@ -788,7 +795,7 @@ public class BRActive {
             if (player.isSpectator()) {
                 continue;
             }
-            if (!this.world.getBlockState(player.getBlockPos()).isAir() || !this.world.getBlockState(player.getBlockPos().up()).isAir()) {
+            if (!this.level.getBlockState(player.blockPosition()).isAir() || !this.level.getBlockState(player.blockPosition().above()).isAir()) {
                 this.resetPlayer(player, true);
             }
         }
@@ -799,7 +806,7 @@ public class BRActive {
             if (playerData.eliminated) {
                 continue;
             }
-            playerData.plot.removeBuild(this.world);
+            playerData.plot.removeBuild(this.level);
         }
     }
 
@@ -814,9 +821,9 @@ public class BRActive {
             if (playerData.eliminated) {
                 continue;
             }
-            playerData.plot.placeGround(this.world);
+            playerData.plot.placeGround(this.level);
         }
-        this.centerPlot.placeGround(this.world);
+        this.centerPlot.placeGround(this.level);
 
         // pick a new build
         if (this.builds.isEmpty()) {
@@ -824,22 +831,22 @@ public class BRActive {
             this.usedBuilds.clear();
         }
         if (this.builds.isEmpty()) {
-            throw new GameOpenException(Text.translatable("error.build_rush.build.none.weird"));
+            throw new GameOpenException(Component.translatable("error.build_rush.build.none.weird"));
         }
-        this.currentBuild = this.builds.get(this.world.random.nextInt(this.builds.size()));
+        this.currentBuild = this.builds.get(this.level.getRandom().nextInt(this.builds.size()));
         this.builds.remove(this.currentBuild);
         this.usedBuilds.add(this.currentBuild);
 
-        var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
-        this.centerPlot.placeBuild(this.world, structure);
-        this.cachedBuild = this.centerPlot.cacheBuild(this.world);
+        var structure = this.level.getStructureManager().get(this.currentBuild.structure()).orElseThrow();
+        this.centerPlot.placeBuild(this.level, structure);
+        this.cachedBuild = this.centerPlot.cacheBuild(this.level);
         this.calcInventory();
 
         // reset scores
         this.loserUuid = null;
         this.maxScore = 0;
         for (var pos : this.cachedBuild.positions()) {
-            if (!this.cachedBuild.state(pos).isIn(BRTags.IGNORED_IN_COMPARISON)) {
+            if (!this.cachedBuild.state(pos).is(BRTags.IGNORED_IN_COMPARISON)) {
                 this.maxScore++;
             }
         }
@@ -856,7 +863,7 @@ public class BRActive {
 
         // reset players
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (data != null && !data.eliminated) {
                 this.resetPlayer(player, true);
             }
@@ -868,8 +875,8 @@ public class BRActive {
 
     public void startMemorizing() {
         this.placePlayerBuilds();
-        this.centerPlot.removeBuild(this.world);
-        this.centerPlot.placeGround(this.world);
+        this.centerPlot.removeBuild(this.level);
+        this.centerPlot.placeGround(this.level);
     }
 
     public void startBuilding() {
@@ -888,8 +895,8 @@ public class BRActive {
     }
 
     public void startElimination() {
-        var structure = this.world.getStructureTemplateManager().getTemplate(this.currentBuild.structure()).orElseThrow();
-        this.centerPlot.placeBuild(this.world, structure);
+        var structure = this.level.getStructureManager().get(this.currentBuild.structure()).orElseThrow();
+        this.centerPlot.placeBuild(this.level, structure);
 
         // calculate scores again
         for (var data : this.playerDataMap.values()) {
@@ -919,23 +926,23 @@ public class BRActive {
         }
 
         for (var player : this.space.getPlayers()) {
-            var data = this.playerDataMap.get(player.getUuid());
+            var data = this.playerDataMap.get(player.getUUID());
             if (data == null || data.eliminated) {
                 continue;
             }
 
             if (data.score == this.maxScore) {
-                TextUtil.sendSubtitle(player, Text.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
-                player.playSoundToPlayer(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                TextUtil.sendSubtitle(player, Component.translatable("title.build_rush.perfect").setStyle(Style.EMPTY.withColor(TextUtil.LEGENDARY).withBold(true)), 0, 3 * 20, 10);
+                PlayerUtil.playSoundToPlayer(player, SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.0f);
             } else {
                 float scorePercentage = data.score / (float) this.maxScore;
                 String scoreAsPercent = String.format("%.2f", scorePercentage * 100).replaceAll("0*$", "").replaceAll("[,.]$", "");
-                var scoreText = Text.translatable("generic.build_rush.score", scoreAsPercent)
+                var scoreText = Component.translatable("generic.build_rush.score", scoreAsPercent)
                         .setStyle(Style.EMPTY.withColor(TextUtil.lerpScoreColor(scorePercentage)).withBold(true));
 
-                player.sendMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
+                player.sendSystemMessage(TextUtil.translatable(TextUtil.DASH, TextUtil.NEUTRAL, "text.build_rush.score", scoreText), false);
                 TextUtil.sendSubtitle(player, scoreText, 0, 2 * 20, 5);
-                player.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                PlayerUtil.playSoundToPlayer(player, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0f, 1.0f);
             }
         }
 
@@ -951,7 +958,7 @@ public class BRActive {
     public void eliminateLoser() {
         if (this.loserUuid == null) {
             this.space.getPlayers().sendMessage(TextUtil.translatable(TextUtil.HEALTH, TextUtil.SUCCESS, "text.build_rush.no_elimination"));
-            this.space.getPlayers().playSound(SoundEvents.ENTITY_VILLAGER_CELEBRATE, SoundCategory.MASTER, 1.0f, 1.5f);
+            this.space.getPlayers().playSound(SoundEvents.VILLAGER_CELEBRATE, SoundSource.MASTER, 1.0f, 1.5f);
         } else {
             var loserData = this.playerDataMap.get(this.loserUuid);
             if (loserData == null) {
@@ -963,12 +970,12 @@ public class BRActive {
 
             // play an explosion sound and particles
             var center = loserData.plot.buildBounds().center();
-            this.world.playSound(null, center.getX(), center.getY(), center.getZ(), SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.BLOCKS, 4.0f * this.size, 1.0f);
-            this.world.spawnParticles(ParticleTypes.EXPLOSION,
-                    loserData.plot.buildBounds().center().getX(), loserData.plot.buildBounds().center().getY(), loserData.plot.buildBounds().center().getZ(), 10,
+            this.level.playSound(null, center.x(), center.y(), center.z(), SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4.0f * this.size, 1.0f);
+            this.level.sendParticles(ParticleTypes.EXPLOSION,
+                    loserData.plot.buildBounds().center().x(), loserData.plot.buildBounds().center().y(), loserData.plot.buildBounds().center().z(), 10,
                     this.size / 1.5f, this.size / 1.5f, this.size / 1.5f, 0.0);
-            loserData.plot.placeGround(this.world);
-            loserData.plot.removeBuild(this.world);
+            loserData.plot.placeGround(this.level);
+            loserData.plot.removeBuild(this.level);
         }
     }
 
@@ -981,7 +988,7 @@ public class BRActive {
                 if (playerData.eliminated) {
                     continue;
                 }
-                playerData.plot.placeGround(this.world);
+                playerData.plot.placeGround(this.level);
             }
             this.startClosing();
         }

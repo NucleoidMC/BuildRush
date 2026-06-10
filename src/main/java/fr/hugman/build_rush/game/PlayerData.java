@@ -5,19 +5,19 @@ import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.TextDisplayElement;
 import fr.hugman.build_rush.map.BRMapConfig;
 import fr.hugman.build_rush.map.Plot;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.boss.ServerBossBar;
-import net.minecraft.entity.decoration.DisplayEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.BossEvent;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import xyz.nucleoid.map_templates.BlockBounds;
 
+import java.util.UUID;
+
 public class PlayerData {
-	public static final Text DEFAULT_BAR_TITLE = Text.translatable("game.build_rush");
+	public static final Component DEFAULT_BAR_TITLE = Component.translatable("game.build_rush");
 
 	public Plot plot;
 	public boolean eliminated = false;
@@ -26,15 +26,15 @@ public class PlayerData {
 	public static final int BREAKING_COOLDOWN = 5;
 	public int breakingCooldown = 0;
 
-	public final ServerBossBar bar;
+	public final ServerBossEvent bar;
 
 	public static final int PLAYER_NAME_TICKS = 40;
 	public ElementHolder playerNameHolder;
 	public TextDisplayElement playerNameElement;
 	public int playerNameTick = 0;
 
-	public PlayerData() {
-		this.bar = new ServerBossBar(DEFAULT_BAR_TITLE, BossBar.Color.YELLOW, BossBar.Style.PROGRESS);
+	public PlayerData(UUID id) {
+		this.bar = new ServerBossEvent(id, DEFAULT_BAR_TITLE, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
 	}
 
 	public void tick() {
@@ -59,11 +59,11 @@ public class PlayerData {
 		}
 	}
 
-	public void join(ServerPlayerEntity player) {
+	public void join(ServerPlayer player) {
 		this.bar.addPlayer(player);
 	}
 
-	public void leave(ServerPlayerEntity player) {
+	public void leave(ServerPlayer player) {
 		this.bar.removePlayer(player);
 	}
 

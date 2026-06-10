@@ -1,13 +1,13 @@
 package fr.hugman.build_rush.text;
 
 import fr.hugman.build_rush.color.ColorUtil;
-import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.server.level.ServerPlayer;
 
 public class TextUtil {
 	public static final int NEUTRAL = 0xadadad;
@@ -45,55 +45,55 @@ public class TextUtil {
 	public static final String X = "✘";
 	public static final String WARNING = "⚠";
 
-	public static void sendTitle(ServerPlayerEntity player, Text title, int fadeInTicks, int stayTicks, int fadeOutTicks) {
-		player.networkHandler.sendPacket(new TitleFadeS2CPacket(fadeInTicks, stayTicks, fadeOutTicks));
-		player.networkHandler.sendPacket(new TitleS2CPacket(title));
+	public static void sendTitle(ServerPlayer player, Component title, int fadeInTicks, int stayTicks, int fadeOutTicks) {
+		player.connection.send(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
+		player.connection.send(new ClientboundSetTitleTextPacket(title));
 	}
 
-	public static void setSubtitle(ServerPlayerEntity player, Text subtitle) {
-		player.networkHandler.sendPacket(new SubtitleS2CPacket(subtitle));
+	public static void setSubtitle(ServerPlayer player, Component subtitle) {
+		player.connection.send(new ClientboundSetSubtitleTextPacket(subtitle));
 	}
 
-	public static void sendTitle(ServerPlayerEntity player, Text title, Text subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
+	public static void sendTitle(ServerPlayer player, Component title, Component subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
 		setSubtitle(player, subtitle);
 		sendTitle(player, title, fadeInTicks, stayTicks, fadeOutTicks);
 	}
 
-	public static void sendSubtitle(ServerPlayerEntity player, Text subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
+	public static void sendSubtitle(ServerPlayer player, Component subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks) {
 		setSubtitle(player, subtitle);
-		sendTitle(player, Text.empty(), fadeInTicks, stayTicks, fadeOutTicks);
+		sendTitle(player, Component.empty(), fadeInTicks, stayTicks, fadeOutTicks);
 	}
 
-	public static void clearTitle(ServerPlayerEntity player) {
+	public static void clearTitle(ServerPlayer player) {
 		clearSubtitle(player);
-		sendTitle(player, Text.empty(), 0, 0, 0);
+		sendTitle(player, Component.empty(), 0, 0, 0);
 	}
 
-	public static void clearSubtitle(ServerPlayerEntity player) {
-		setSubtitle(player, Text.empty());
+	public static void clearSubtitle(ServerPlayer player) {
+		setSubtitle(player, Component.empty());
 	}
 
-	public static MutableText withPrefix(String prefix, int color, boolean bold, Text text) {
-		return Text
+	public static MutableComponent withPrefix(String prefix, int color, boolean bold, Component text) {
+		return Component
 				.literal(prefix + " ")
 				.setStyle(Style.EMPTY.withColor(color).withBold(bold))
 				.append(text);
 	}
 
-	public static MutableText withPrefix(String prefix, int color, Text text) {
+	public static MutableComponent withPrefix(String prefix, int color, Component text) {
 		return withPrefix(prefix, color, false, text);
 	}
 
-	public static MutableText withPrefix(String prefix, Text text) {
+	public static MutableComponent withPrefix(String prefix, Component text) {
 		return withPrefix(prefix, TextUtil.NEUTRAL_S, text);
 	}
 
-	public static MutableText translatable(String prefix, int color, String key, Object... objects) {
+	public static MutableComponent translatable(String prefix, int color, String key, Object... objects) {
 		return withPrefix(prefix, darker(color), translatable(color, key, objects));
 	}
 
-	public static MutableText translatable(int color, String key, Object... objects) {
-		return Text.translatable(key, objects).setStyle(Style.EMPTY.withColor(color));
+	public static MutableComponent translatable(int color, String key, Object... objects) {
+		return Component.translatable(key, objects).setStyle(Style.EMPTY.withColor(color));
 	}
 
 	private static int darker(int color) {

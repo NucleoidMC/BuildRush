@@ -3,9 +3,9 @@ package fr.hugman.build_rush.map;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import fr.hugman.build_rush.misc.Author;
-import net.minecraft.util.Identifier;
-
 import java.util.Optional;
+
+import net.minecraft.resources.Identifier;
 
 public record BRMapConfig(Identifier template, Optional<Author> author, int nametagOffset, float nametagSize) {
 	public static final Codec<BRMapConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(

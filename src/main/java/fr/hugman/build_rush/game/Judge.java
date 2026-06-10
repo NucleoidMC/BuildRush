@@ -5,9 +5,9 @@ import eu.pb4.polymer.virtualentity.api.attachment.ChunkAttachment;
 import eu.pb4.polymer.virtualentity.api.elements.BlockDisplayElement;
 import fr.hugman.build_rush.BuildRush;
 import fr.hugman.build_rush.map.Plot;
-import net.minecraft.block.Blocks;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -27,7 +27,7 @@ public class Judge {
         this.judgeHolder = elementHolder;
     }
 
-    public static Judge of(RoundManager roundManager, ServerWorld world, Vec3d pos) {
+    public static Judge of(RoundManager roundManager, ServerLevel world, Vec3 pos) {
         var judgeHolder = new ElementHolder();
         ChunkAttachment.of(judgeHolder, world, pos);
         return new Judge(roundManager, judgeHolder);
@@ -67,11 +67,11 @@ public class Judge {
                 this.nukePlot2();
             }
             if (stateTick % 6 == 0) {
-                this.judgeElement.setBlockState(Blocks.TNT.getDefaultState());
+                this.judgeElement.setBlockState(Blocks.TNT.defaultBlockState());
                 this.judgeElement.tick();
             }
             if (stateTick % 6 == 3) {
-                this.judgeElement.setBlockState(Blocks.WHITE_CONCRETE_POWDER.getDefaultState());
+                this.judgeElement.setBlockState(Blocks.WHITE_CONCRETE_POWDER.defaultBlockState());
                 this.judgeElement.tick();
             }
         }
@@ -95,7 +95,7 @@ public class Judge {
     public void spawn() {
         this.remove();
         this.offset = new Vector3f(0, 0, 0);
-        this.judgeElement = new BlockDisplayElement(Blocks.TNT.getDefaultState());
+        this.judgeElement = new BlockDisplayElement(Blocks.TNT.defaultBlockState());
         this.judgeElement.setTranslation(new Vector3f(-1.5f, -1.5f, -1.5f));
         this.judgeElement.setScale(new Vector3f(3, 3, 3));
         this.judgeHolder.addElement(this.judgeElement);
@@ -169,7 +169,7 @@ public class Judge {
         var translation = new Vector3f(this.offset);
 
         this.judgeElement.setTranslation(translation);
-        this.judgeElement.setScale(new Vec3d(0, 0, 0).toVector3f());
+        this.judgeElement.setScale(new Vec3(0, 0, 0).toVector3f());
         this.judgeElement.setInterpolationDuration(EXPLOSION_DURATION / 3);
         this.judgeElement.startInterpolation();
         this.judgeElement.tick();

@@ -1,14 +1,14 @@
 package fr.hugman.build_rush.map;
 
 import fr.hugman.build_rush.misc.CachedBlocks;
-import net.minecraft.block.Blocks;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.structure.StructurePlacementData;
-import net.minecraft.structure.StructureTemplate;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 public final class Plot {
@@ -26,8 +26,8 @@ public final class Plot {
 
     public static Plot of(BlockBounds groundBounds) {
         var size = groundBounds.size().getX() + 1;
-        var buildBounds = new BlockBounds(groundBounds.min().add(0, 1, 0), groundBounds.max().add(0, size, 0));
-        var safeZone = new BlockBounds(buildBounds.min().add(-1, -1, -1), buildBounds.max().add(1, 1, 1));
+        var buildBounds = new BlockBounds(groundBounds.min().offset(0, 1, 0), groundBounds.max().offset(0, size, 0));
+        var safeZone = new BlockBounds(buildBounds.min().offset(-1, -1, -1), buildBounds.max().offset(1, 1, 1));
 
         return new Plot(groundBounds, buildBounds, safeZone, null);
     }
@@ -48,49 +48,49 @@ public final class Plot {
         return groundBlocks;
     }
 
-    public void cacheGround(ServerWorld world) {
+    public void cacheGround(ServerLevel world) {
         this.groundBlocks = CachedBlocks.from(world, this.groundBounds);
     }
 
-    public CachedBlocks cacheBuild(ServerWorld world) {
+    public CachedBlocks cacheBuild(ServerLevel world) {
         return CachedBlocks.from(world, this.buildBounds);
     }
 
-    public void placeGround(ServerWorld world) {
+    public void placeGround(ServerLevel world) {
         this.groundBlocks.place(world, this.groundBounds.min());
     }
 
-    public void placeBuild(ServerWorld world, StructureTemplate build) {
-        world.playSound(null, BlockPos.ofFloored(this.buildBounds.center()), SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 2.0f, 0.9f);
+    public void placeBuild(ServerLevel world, StructureTemplate build) {
+        world.playSound(null, BlockPos.containing(this.buildBounds.center()), SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 2.0f, 0.9f);
         boolean hasGround = build.getSize().getY() > this.buildBounds.size().getY() + 1;
         var buildPos = hasGround ? this.groundBounds.min() : this.buildBounds.min();
-        build.place(world, buildPos, buildPos, new StructurePlacementData(), world.getRandom(), 2);
+        build.placeInWorld(world, buildPos, buildPos, new StructurePlaceSettings(), world.getRandom(), 2);
 
-        BlockBounds barrier = BlockBounds.of(this.groundBounds.min().add(0, -1, 0), this.groundBounds.max().add(0, -1, 0));
+        BlockBounds barrier = BlockBounds.of(this.groundBounds.min().offset(0, -1, 0), this.groundBounds.max().offset(0, -1, 0));
         barrier.forEach(pos -> {
             if (world.getBlockState(pos).isAir()) {
-                world.setBlockState(pos, Blocks.BARRIER.getDefaultState());
+                world.setBlockAndUpdate(pos, Blocks.BARRIER.defaultBlockState());
             }
         });
     }
 
-    public void removeGround(ServerWorld world) {
+    public void removeGround(ServerLevel world) {
         for (BlockPos pos : this.groundBounds) {
             removeBlock(world, pos);
         }
     }
 
-    public void removeBuild(ServerWorld world) {
+    public void removeBuild(ServerLevel world) {
         for (BlockPos pos : this.buildBounds) {
             removeBlock(world, pos);
         }
     }
 
-    private static void removeBlock(ServerWorld world, BlockPos pos) {
+    private static void removeBlock(ServerLevel world, BlockPos pos) {
         if (!world.getBlockState(pos).isAir()) {
-            var particlePos = pos.toCenterPos();
-            world.spawnParticles(ParticleTypes.CLOUD, particlePos.getX(), particlePos.getY(), particlePos.getZ(), 2, 0.5, 0.5, 0.5, 0.1D);
-            world.setBlockState(pos, Blocks.AIR.getDefaultState());
+            var particlePos = pos.getCenter();
+            world.sendParticles(ParticleTypes.CLOUD, particlePos.x(), particlePos.y(), particlePos.z(), 2, 0.5, 0.5, 0.5, 0.1D);
+            world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         }
     }
 }

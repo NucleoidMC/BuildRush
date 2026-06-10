@@ -6,18 +6,7 @@ import fr.hugman.build_rush.build.Build;
 import fr.hugman.build_rush.map.BRMap;
 import fr.hugman.build_rush.registry.BRRegistries;
 import fr.hugman.build_rush.registry.tag.BRTags;
-import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.structure.StructureTemplate;
-import net.minecraft.structure.StructureTemplateManager;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import xyz.nucleoid.plasmid.api.game.GameOpenContext;
 import xyz.nucleoid.plasmid.api.game.GameOpenException;
@@ -34,6 +23,16 @@ import xyz.nucleoid.stimuli.event.player.PlayerDeathEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+import net.minecraft.world.phys.Vec3;
 
 public class BRWaiting {
     public static GameOpenProcedure open(GameOpenContext<BRConfig> context) {
@@ -46,7 +45,7 @@ public class BRWaiting {
             throw new RuntimeException(e);
         }
 
-        return context.openWithWorld(map.worldConfig(), (activity, world) -> {
+        return context.openWithLevel(map.worldConfig(), (activity, world) -> {
             GameWaitingLobby.addTo(activity, config.playerConfig());
             map.cachePlotGrounds(world);
 
@@ -54,7 +53,7 @@ public class BRWaiting {
             var spawnPos = map.centerPlot().groundBounds().center().add(0, 1, 0);
 
             activity.listen(PlayerDamageEvent.EVENT, (player, source, amount) -> {
-                if (source.isOf(DamageTypes.OUT_OF_WORLD)) {
+                if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
                     resetPlayer(player, world, spawnPos);
                 }
                 return EventResult.DENY;
@@ -74,28 +73,28 @@ public class BRWaiting {
         });
     }
 
-    public static void resetPlayer(ServerPlayerEntity player, World world, Vec3d pos) {
-        player.teleport(pos.getX(), pos.getY(), pos.getZ(), false);
+    public static void resetPlayer(ServerPlayer player, Level world, Vec3 pos) {
+        player.randomTeleport(pos.x(), pos.y(), pos.z(), false);
 
         player.setHealth(20.0f);
-        player.changeGameMode(GameMode.ADVENTURE);
-        player.getHungerManager().setFoodLevel(20);
-        player.getHungerManager().setSaturationLevel(20.0f);
+        player.setGameMode(GameType.ADVENTURE);
+        player.getFoodData().setFoodLevel(20);
+        player.getFoodData().setSaturation(20.0f);
     }
 
-    public static List<Build> getBuilds(int buildSize, BRConfig config, ServerWorld world) {
-        var structureManager = world.getStructureTemplateManager();
-        var registryManager = world.getRegistryManager();
+    public static List<Build> getBuilds(int buildSize, BRConfig config, ServerLevel world) {
+        var structureManager = world.getStructureManager();
+        var registryManager = world.registryAccess();
 
         List<Build> builds = new ArrayList<>();
         var buildEntries = config.builds()
-                .orElse(registryManager.getOrThrow(BRRegistries.BUILD).getOptional(BRTags.GENERIC)
-                        .orElseThrow(() -> new GameOpenException(Text.translatable("error.build_rush.tag.generic.not_found"))));
+                .orElse(registryManager.lookupOrThrow(BRRegistries.BUILD).get(BRTags.GENERIC)
+                        .orElseThrow(() -> new GameOpenException(Component.translatable("error.build_rush.tag.generic.not_found"))));
 
-        for (RegistryEntry<Build> buildEntry : buildEntries) {
+        for (Holder<Build> buildEntry : buildEntries) {
             // Get the plot structure
             var build = buildEntry.value();
-            if (buildEntry.isIn(BRTags.BLACKLIST)) {
+            if (buildEntry.is(BRTags.BLACKLIST)) {
                 // TODO: fix #29
                 BuildRush.LOGGER.warn("Build is in the blacklist! Skipping: " + buildEntry);
                 continue;
@@ -110,14 +109,14 @@ public class BRWaiting {
             builds.add(build);
         }
         if (builds.isEmpty()) {
-            throw new GameOpenException(Text.translatable("error.build_rush.build.none"));
+            throw new GameOpenException(Component.translatable("error.build_rush.build.none"));
         }
         return builds;
     }
 
     @Nullable
     public static StructureTemplate getAndAssertStructure(Identifier id, StructureTemplateManager manager) {
-        var template = manager.getTemplate(id).orElseThrow(() -> new GameOpenException(Text.translatable("structure_block.load_not_found", id.toString())));
+        var template = manager.get(id).orElseThrow(() -> new GameOpenException(Component.translatable("structure_block.load_not_found", id.toString())));
 
         int x = template.getSize().getX();
         int y = template.getSize().getY();

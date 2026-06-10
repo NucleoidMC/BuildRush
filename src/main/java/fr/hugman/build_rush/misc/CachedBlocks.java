@@ -1,32 +1,38 @@
 package fr.hugman.build_rush.misc;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
+import com.mojang.logging.LogUtils;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import org.slf4j.Logger;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 import java.util.HashMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class CachedBlocks {
-	private final HashMap<Vec3i, BlockState> states;
-	private final HashMap<Vec3i, NbtCompound> nbtCompounds;
+	private static final Logger LOGGER = LogUtils.getLogger();
 
-	public CachedBlocks(HashMap<Vec3i, BlockState> states, HashMap<Vec3i, NbtCompound> nbtCompounds) {
+	private final HashMap<Vec3i, BlockState> states;
+	private final HashMap<Vec3i, CompoundTag> nbtCompounds;
+
+	public CachedBlocks(HashMap<Vec3i, BlockState> states, HashMap<Vec3i, CompoundTag> nbtCompounds) {
 		this.states = states;
 		this.nbtCompounds = nbtCompounds;
 	}
 
-	public static CachedBlocks from(ServerWorld world, BlockBounds bounds) {
+	public static CachedBlocks from(ServerLevel world, BlockBounds bounds) {
 		var size = bounds.size();
 		HashMap<Vec3i, BlockState> states = new HashMap<>();
-		HashMap<Vec3i, NbtCompound> nbt = new HashMap<>();
+		HashMap<Vec3i, CompoundTag> nbt = new HashMap<>();
 		for (int x = 0; x <= size.getX(); x++) {
 			for (int y = 0; y <= size.getY(); y++) {
 				for (int z = 0; z <= size.getZ(); z++) {
 					var targetPos = new BlockPos(x, y, z);
-					var sourcePos = bounds.min().add(x, y, z);
+					var sourcePos = bounds.min().offset(x, y, z);
 
 					// state
 					states.put(targetPos, world.getBlockState(sourcePos));
@@ -34,7 +40,7 @@ public class CachedBlocks {
 					// nbt
 					var sourceEntity = world.getBlockEntity(sourcePos);
 					if (sourceEntity != null) {
-						var sourceNbt = sourceEntity.createNbt(world.getRegistryManager());
+						var sourceNbt = sourceEntity.saveWithoutMetadata(world.registryAccess());
 						nbt.put(targetPos, sourceNbt);
 					}
 				}
@@ -44,18 +50,20 @@ public class CachedBlocks {
 		return new CachedBlocks(states, nbt);
 	}
 
-	public void place(ServerWorld world, BlockPos origin) {
+	public void place(ServerLevel level, BlockPos origin) {
 		for (var entry : this.states.entrySet()) {
-			var targetPos = origin.add(entry.getKey());
+			var targetPos = origin.offset(entry.getKey());
 			var state = entry.getValue();
-			world.setBlockState(targetPos, state);
+			level.setBlockAndUpdate(targetPos, state);
 		}
 		for (var entry : this.nbtCompounds.entrySet()) {
-			var targetPos = origin.add(entry.getKey());
-			var nbt = entry.getValue();
-			var entity = world.getBlockEntity(targetPos);
+			var targetPos = origin.offset(entry.getKey());
+			var tag = entry.getValue();
+			var entity = level.getBlockEntity(targetPos);
 			if (entity != null) {
-				entity.read(nbt, world.getRegistryManager());
+				try (ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(entity.problemPath(), LOGGER)) {
+					entity.loadWithComponents(TagValueInput.create(reporter.forChild(entity.problemPath()), level.registryAccess(), tag));
+				}
 			}
 		}
 	}
@@ -72,11 +80,11 @@ public class CachedBlocks {
 		return this.states.get(new Vec3i(x, y, z));
 	}
 
-	public NbtCompound nbt(Vec3i pos) {
+	public CompoundTag nbt(Vec3i pos) {
 		return this.nbtCompounds.get(pos);
 	}
 
-	public NbtCompound nbt(int x, int y, int z) {
+	public CompoundTag nbt(int x, int y, int z) {
 		return this.nbtCompounds.get(new Vec3i(x, y, z));
 	}
 }
