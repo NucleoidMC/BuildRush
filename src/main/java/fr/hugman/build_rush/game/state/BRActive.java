@@ -557,7 +557,7 @@ public class BRActive {
         }
          */
         var state = this.level.getBlockState(pos);
-        var center = pos.getCenter();
+        var center = Vec3.atCenterOf(pos);
 
         this.giveBlock(player, pos);
         this.level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
@@ -586,7 +586,7 @@ public class BRActive {
         }
         if (this.canInteractWithWorld) {
             var state = this.level.getBlockState(pos);
-            var center = pos.getCenter();
+            var center = Vec3.atCenterOf(pos);
             var player = this.space.getPlayers().getEntity(uuid);
 
             if (player != null) {
@@ -654,10 +654,10 @@ public class BRActive {
         if (teleport) {
             Vec3 pos;
             if (cannotPlay) {
-                pos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(centerPlot.groundBounds().center())).getCenter();
+                pos = Vec3.atCenterOf(level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(centerPlot.groundBounds().center())));
             } else {
                 data.join(player);
-                pos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(data.plot.groundBounds().center()).offset(0, 0, this.size / 2)).getCenter();
+                pos = Vec3.atCenterOf(level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(data.plot.groundBounds().center()).offset(0, 0, this.size / 2)));
                 //TODO: add config for this
                 for (int i = 5; i > 0; i--) {
                     var newPos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(data.plot.groundBounds().center().add(0, 0, i)));
@@ -665,7 +665,7 @@ public class BRActive {
                         continue;
                     }
                     if (level.getBlockState(newPos.below()).entityCanStandOn(level, newPos.below(), player)) {
-                        pos = newPos.getCenter();
+                        pos = Vec3.atCenterOf(newPos);
                         break;
                     }
                 }

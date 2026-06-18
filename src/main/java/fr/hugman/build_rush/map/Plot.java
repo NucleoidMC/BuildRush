@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.Vec3;
 import xyz.nucleoid.map_templates.BlockBounds;
 
 public final class Plot {
@@ -88,7 +89,7 @@ public final class Plot {
 
     private static void removeBlock(ServerLevel world, BlockPos pos) {
         if (!world.getBlockState(pos).isAir()) {
-            var particlePos = pos.getCenter();
+            var particlePos = Vec3.atCenterOf(pos);
             world.sendParticles(ParticleTypes.CLOUD, particlePos.x(), particlePos.y(), particlePos.z(), 2, 0.5, 0.5, 0.5, 0.1D);
             world.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         }

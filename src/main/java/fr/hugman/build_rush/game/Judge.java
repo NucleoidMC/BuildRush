@@ -71,7 +71,7 @@ public class Judge {
                 this.judgeElement.tick();
             }
             if (stateTick % 6 == 3) {
-                this.judgeElement.setBlockState(Blocks.WHITE_CONCRETE_POWDER.defaultBlockState());
+                this.judgeElement.setBlockState(Blocks.CONCRETE_POWDER.white().defaultBlockState());
                 this.judgeElement.tick();
             }
         }
